@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fretflow-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: fretflow
+      POSTGRES_USER: fretflow
+      POSTGRES_PASSWORD: fretflow
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - fretflow_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fretflow -d fretflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  fretflow_postgres_data:
