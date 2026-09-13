@@ -20,6 +20,10 @@ const links = [
     href: "/dashboard/practice",
     label: "Practice",
   },
+  {
+    href: "/dashboard/progress",
+    label: "Progress",
+  },
 ];
 
 export default function Sidebar() {
