@@ -7,9 +7,11 @@ import {
 } from "react";
 
 import {
+  BpmProgressPoint,
   Exercise,
   PracticeSession,
   Song,
+  getBpmProgress,
   getExercises,
   getPracticeSessions,
   getSongs,
@@ -30,38 +32,31 @@ type PracticeRecommendation = {
   progress: number;
 };
 
+type HistorySelection = {
+  type: "song" | "exercise";
+  id: number;
+  name: string;
+  targetBpm: number;
+};
+
 function getStartOfDay(date: Date) {
   const result = new Date(date);
 
-  result.setHours(
-    0,
-    0,
-    0,
-    0
-  );
+  result.setHours(0, 0, 0, 0);
 
   return result;
 }
 
 function getDateKey(date: Date) {
-  const year =
-    date.getFullYear();
+  const year = date.getFullYear();
 
-  const month =
-    String(
-      date.getMonth() + 1
-    ).padStart(
-      2,
-      "0"
-    );
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
 
-  const day =
-    String(
-      date.getDate()
-    ).padStart(
-      2,
-      "0"
-    );
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
@@ -73,25 +68,21 @@ function calculateStreak(
     return 0;
   }
 
-  const practiceDays =
-    new Set(
-      sessions.map(
-        (session) =>
-          getDateKey(
-            new Date(
-              session.started_at
-            )
-          )
+  const practiceDays = new Set(
+    sessions.map((session) =>
+      getDateKey(
+        new Date(
+          session.started_at
+        )
       )
-    );
+    )
+  );
 
-  const today =
-    getStartOfDay(
-      new Date()
-    );
+  const today = getStartOfDay(
+    new Date()
+  );
 
-  const yesterday =
-    new Date(today);
+  const yesterday = new Date(today);
 
   yesterday.setDate(
     yesterday.getDate() - 1
@@ -103,9 +94,7 @@ function calculateStreak(
     )
       ? today
       : practiceDays.has(
-            getDateKey(
-              yesterday
-            )
+            getDateKey(yesterday)
           )
         ? yesterday
         : null;
@@ -123,8 +112,7 @@ function calculateStreak(
   ) {
     streak += 1;
 
-    cursor =
-      new Date(cursor);
+    cursor = new Date(cursor);
 
     cursor.setDate(
       cursor.getDate() - 1
@@ -145,8 +133,7 @@ function calculateProgress(
   return Math.min(
     100,
     Math.round(
-      (current / target) *
-        100
+      (current / target) * 100
     )
   );
 }
@@ -162,8 +149,9 @@ function formatPracticeTime(
     };
   }
 
-  const hours =
-    Math.floor(minutes / 60);
+  const hours = Math.floor(
+    minutes / 60
+  );
 
   const remainingMinutes =
     minutes % 60;
@@ -182,17 +170,20 @@ export default function ProgressPage() {
   const [songs, setSongs] =
     useState<Song[]>([]);
 
-  const [
-    exercises,
-    setExercises,
-  ] = useState<Exercise[]>([]);
+  const [exercises, setExercises] =
+    useState<Exercise[]>([]);
 
-  const [
-    sessions,
-    setSessions,
-  ] = useState<
-    PracticeSession[]
-  >([]);
+  const [sessions, setSessions] =
+    useState<PracticeSession[]>([]);
+
+  const [historySelection, setHistorySelection] =
+    useState<HistorySelection | null>(null);
+
+  const [history, setHistory] =
+    useState<BpmProgressPoint[]>([]);
+
+  const [historyLoading, setHistoryLoading] =
+    useState(false);
 
   const [loading, setLoading] =
     useState(true);
@@ -214,12 +205,29 @@ export default function ProgressPage() {
         ]);
 
         setSongs(songData);
-        setExercises(
-          exerciseData
-        );
-        setSessions(
-          sessionData
-        );
+        setExercises(exerciseData);
+        setSessions(sessionData);
+
+        if (songData.length > 0) {
+          setHistorySelection({
+            type: "song",
+            id: songData[0].id,
+            name: songData[0].title,
+            targetBpm:
+              songData[0].target_bpm,
+          });
+        } else if (
+          exerciseData.length > 0
+        ) {
+          setHistorySelection({
+            type: "exercise",
+            id: exerciseData[0].id,
+            name: exerciseData[0].name,
+            targetBpm:
+              exerciseData[0]
+                .target_bpm,
+          });
+        }
       } catch {
         setError(
           "Could not load progress data."
@@ -231,6 +239,33 @@ export default function ProgressPage() {
 
     loadData();
   }, []);
+
+  useEffect(() => {
+    async function loadHistory() {
+      if (!historySelection) {
+        setHistory([]);
+        return;
+      }
+
+      setHistoryLoading(true);
+
+      try {
+        const data =
+          await getBpmProgress(
+            historySelection.type,
+            historySelection.id
+          );
+
+        setHistory(data);
+      } catch {
+        setHistory([]);
+      } finally {
+        setHistoryLoading(false);
+      }
+    }
+
+    loadHistory();
+  }, [historySelection]);
 
   const lastSevenDays =
     useMemo<DailyPractice[]>(
@@ -434,6 +469,98 @@ export default function ProgressPage() {
       )
     );
 
+  const bpmGain =
+    history.length >= 2
+      ? history[
+          history.length - 1
+        ].bpm -
+        history[0].bpm
+      : 0;
+
+  const latestBpm =
+    history.length > 0
+      ? history[
+          history.length - 1
+        ].bpm
+      : 0;
+
+  const historyMin =
+    history.length > 0
+      ? Math.min(
+          ...history.map(
+            (point) =>
+              point.bpm
+          )
+        )
+      : 0;
+
+  const historyMax =
+    historySelection
+      ? Math.max(
+          historySelection.targetBpm,
+          ...history.map(
+            (point) =>
+              point.bpm
+          )
+        )
+      : 100;
+
+  const historyRange =
+    Math.max(
+      1,
+      historyMax - historyMin
+    );
+
+  function selectHistory(
+    value: string
+  ) {
+    const [type, idValue] =
+      value.split(":");
+
+    const id =
+      Number(idValue);
+
+    if (type === "song") {
+      const song =
+        songs.find(
+          (item) =>
+            item.id === id
+        );
+
+      if (!song) {
+        return;
+      }
+
+      setHistorySelection({
+        type: "song",
+        id: song.id,
+        name: song.title,
+        targetBpm:
+          song.target_bpm,
+      });
+
+      return;
+    }
+
+    const exercise =
+      exercises.find(
+        (item) =>
+          item.id === id
+      );
+
+    if (!exercise) {
+      return;
+    }
+
+    setHistorySelection({
+      type: "exercise",
+      id: exercise.id,
+      name: exercise.name,
+      targetBpm:
+        exercise.target_bpm,
+    });
+  }
+
   return (
     <div className="studio-app">
       <Sidebar />
@@ -572,6 +699,245 @@ export default function ProgressPage() {
               Songs
             </small>
           </article>
+        </section>
+
+        <section className="bpm-history-section">
+          <div className="progress-section-heading">
+            <div>
+              <p className="studio-kicker">
+                SPEED HISTORY
+              </p>
+
+              <h2>
+                BPM over time
+              </h2>
+            </div>
+
+            <select
+              className="bpm-history-select"
+              value={
+                historySelection
+                  ? `${historySelection.type}:${historySelection.id}`
+                  : ""
+              }
+              onChange={(event) =>
+                selectHistory(
+                  event.target.value
+                )
+              }
+            >
+              {songs.length > 0 && (
+                <optgroup label="Songs">
+                  {songs.map(
+                    (song) => (
+                      <option
+                        key={`song-${song.id}`}
+                        value={`song:${song.id}`}
+                      >
+                        {song.title}
+                      </option>
+                    )
+                  )}
+                </optgroup>
+              )}
+
+              {exercises.length > 0 && (
+                <optgroup label="Drills">
+                  {exercises.map(
+                    (exercise) => (
+                      <option
+                        key={`exercise-${exercise.id}`}
+                        value={`exercise:${exercise.id}`}
+                      >
+                        {
+                          exercise.name
+                        }
+                      </option>
+                    )
+                  )}
+                </optgroup>
+              )}
+            </select>
+          </div>
+
+          {historySelection ? (
+            <>
+              <div className="bpm-history-summary">
+                <div>
+                  <span>
+                    CURRENT
+                  </span>
+
+                  <strong>
+                    {historyLoading
+                      ? "—"
+                      : latestBpm}
+                    <small>
+                      BPM
+                    </small>
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    TARGET
+                  </span>
+
+                  <strong>
+                    {
+                      historySelection.targetBpm
+                    }
+                    <small>
+                      BPM
+                    </small>
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    CHANGE
+                  </span>
+
+                  <strong
+                    className={
+                      bpmGain > 0
+                        ? "bpm-gain-positive"
+                        : bpmGain < 0
+                          ? "bpm-gain-negative"
+                          : ""
+                    }
+                  >
+                    {bpmGain > 0
+                      ? "+"
+                      : ""}
+                    {bpmGain}
+                    <small>
+                      BPM
+                    </small>
+                  </strong>
+                </div>
+
+                <div>
+                  <span>
+                    RECORDS
+                  </span>
+
+                  <strong>
+                    {history.length}
+                  </strong>
+                </div>
+              </div>
+
+              <div className="bpm-history-chart">
+                {historyLoading ? (
+                  <div className="bpm-history-empty">
+                    Loading BPM history...
+                  </div>
+                ) : history.length === 0 ? (
+                  <div className="bpm-history-empty">
+                    No BPM history yet.
+                  </div>
+                ) : (
+                  history.map(
+                    (
+                      point,
+                      index
+                    ) => {
+                      const height =
+                        Math.max(
+                          8,
+                          ((point.bpm -
+                            historyMin) /
+                            historyRange) *
+                            82 +
+                            10
+                        );
+
+                      return (
+                        <div
+                          className="bpm-history-point"
+                          key={
+                            point.id
+                          }
+                        >
+                          <div className="bpm-history-column">
+                            <span className="bpm-history-value">
+                              {
+                                point.bpm
+                              }
+                            </span>
+
+                            <div
+                              className="bpm-history-bar"
+                              style={{
+                                height: `${height}%`,
+                              }}
+                            />
+
+                            <span className="bpm-history-dot" />
+                          </div>
+
+                          <strong>
+                            {new Date(
+                              point.recorded_at
+                            ).toLocaleDateString(
+                              undefined,
+                              {
+                                month:
+                                  "short",
+                                day:
+                                  "numeric",
+                              }
+                            )}
+                          </strong>
+
+                          <small>
+                            #
+                            {
+                              index +
+                              1
+                            }
+                          </small>
+                        </div>
+                      );
+                    }
+                  )
+                )}
+
+                {history.length > 0 && (
+                  <div
+                    className="bpm-target-line"
+                    style={{
+                      bottom: `${Math.min(
+                        92,
+                        Math.max(
+                          10,
+                          ((historySelection.targetBpm -
+                            historyMin) /
+                            historyRange) *
+                            82 +
+                            10
+                        )
+                      )}%`,
+                    }}
+                  >
+                    <span>
+                      TARGET{" "}
+                      {
+                        historySelection.targetBpm
+                      }{" "}
+                      BPM
+                    </span>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="bpm-history-empty">
+              Add a song or drill to
+              start tracking BPM.
+            </div>
+          )}
         </section>
 
         <section className="progress-week-section">

@@ -275,3 +275,33 @@ export async function deletePracticeSession(
     throw new Error("Failed to delete practice session");
   }
 }
+
+// --------------------
+// BPM Progress
+// --------------------
+
+export type BpmProgressPoint = {
+  id: number;
+  entity_type: "song" | "exercise";
+  entity_id: number;
+  bpm: number;
+  recorded_at: string;
+};
+
+export async function getBpmProgress(
+  entityType: "song" | "exercise",
+  entityId: number
+): Promise<BpmProgressPoint[]> {
+  const response = await fetch(
+    `${API_URL}/bpm-progress/${entityType}/${entityId}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load BPM progress");
+  }
+
+  return response.json();
+}

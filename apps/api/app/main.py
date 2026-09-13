@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.routes.bpm_progress import (
+    router as bpm_progress_router,
+)
 from app.api.routes.exercises import router as exercises_router
 from app.api.routes.health import router as health_router
 from app.api.routes.practice_queue import (
@@ -22,7 +25,7 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="FretFlow API",
-    version="0.3.0",
+    version="0.4.0",
     description="Backend API for FretFlow guitar practice tracking.",
 )
 
@@ -39,17 +42,35 @@ app.add_middleware(
 )
 
 
-app.include_router(health_router)
-app.include_router(songs_router)
-app.include_router(exercises_router)
-app.include_router(practice_sessions_router)
-app.include_router(practice_queue_router)
+app.include_router(
+    health_router
+)
+
+app.include_router(
+    songs_router
+)
+
+app.include_router(
+    exercises_router
+)
+
+app.include_router(
+    practice_sessions_router
+)
+
+app.include_router(
+    practice_queue_router
+)
+
+app.include_router(
+    bpm_progress_router
+)
 
 
 @app.get("/")
 def root():
     return {
         "name": "FretFlow API",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "status": "running",
     }

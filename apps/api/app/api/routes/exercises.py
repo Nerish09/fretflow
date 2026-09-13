@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.bpm_progress import BpmProgress
 from app.models.exercise import Exercise
 
 
@@ -37,7 +38,9 @@ def validate_bpm(value: int):
         )
 
 
-def serialize_exercise(exercise: Exercise):
+def serialize_exercise(
+    exercise: Exercise,
+):
     return {
         "id": exercise.id,
         "name": exercise.name,
@@ -49,18 +52,38 @@ def serialize_exercise(exercise: Exercise):
     }
 
 
+def record_bpm(
+    db: Session,
+    exercise_id: int,
+    bpm: int,
+):
+    db.add(
+        BpmProgress(
+            entity_type="exercise",
+            entity_id=exercise_id,
+            bpm=bpm,
+        )
+    )
+
+
 @router.get("")
 def get_exercises(
     db: Session = Depends(get_db),
 ):
-    statement = select(Exercise).order_by(
+    statement = select(
+        Exercise
+    ).order_by(
         Exercise.created_at.desc()
     )
 
-    exercises = db.scalars(statement).all()
+    exercises = db.scalars(
+        statement
+    ).all()
 
     return [
-        serialize_exercise(exercise)
+        serialize_exercise(
+            exercise
+        )
         for exercise in exercises
     ]
 
@@ -81,7 +104,9 @@ def get_exercise(
             detail="Exercise not found",
         )
 
-    return serialize_exercise(exercise)
+    return serialize_exercise(
+        exercise
+    )
 
 
 @router.post(
@@ -93,7 +118,9 @@ def create_exercise(
     db: Session = Depends(get_db),
 ):
     name = data.name.strip()
-    category = data.category.strip()
+    category = (
+        data.category.strip()
+    )
 
     if not name:
         raise HTTPException(
@@ -107,8 +134,13 @@ def create_exercise(
             detail="Exercise category is required",
         )
 
-    validate_bpm(data.current_bpm)
-    validate_bpm(data.target_bpm)
+    validate_bpm(
+        data.current_bpm
+    )
+
+    validate_bpm(
+        data.target_bpm
+    )
 
     exercise = Exercise(
         name=name,
@@ -119,10 +151,20 @@ def create_exercise(
     )
 
     db.add(exercise)
+    db.flush()
+
+    record_bpm(
+        db,
+        exercise.id,
+        exercise.current_bpm,
+    )
+
     db.commit()
     db.refresh(exercise)
 
-    return serialize_exercise(exercise)
+    return serialize_exercise(
+        exercise
+    )
 
 
 @router.patch("/{exercise_id}")
@@ -154,7 +196,9 @@ def update_exercise(
         exercise.name = name
 
     if data.category is not None:
-        category = data.category.strip()
+        category = (
+            data.category.strip()
+        )
 
         if not category:
             raise HTTPException(
@@ -162,23 +206,49 @@ def update_exercise(
                 detail="Exercise category is required",
             )
 
-        exercise.category = category
+        exercise.category = (
+            category
+        )
 
     if data.current_bpm is not None:
-        validate_bpm(data.current_bpm)
-        exercise.current_bpm = data.current_bpm
+        validate_bpm(
+            data.current_bpm
+        )
+
+        if (
+            data.current_bpm
+            != exercise.current_bpm
+        ):
+            exercise.current_bpm = (
+                data.current_bpm
+            )
+
+            record_bpm(
+                db,
+                exercise.id,
+                data.current_bpm,
+            )
 
     if data.target_bpm is not None:
-        validate_bpm(data.target_bpm)
-        exercise.target_bpm = data.target_bpm
+        validate_bpm(
+            data.target_bpm
+        )
+
+        exercise.target_bpm = (
+            data.target_bpm
+        )
 
     if data.notes is not None:
-        exercise.notes = data.notes
+        exercise.notes = (
+            data.notes
+        )
 
     db.commit()
     db.refresh(exercise)
 
-    return serialize_exercise(exercise)
+    return serialize_exercise(
+        exercise
+    )
 
 
 @router.delete(
@@ -200,7 +270,21 @@ def delete_exercise(
             detail="Exercise not found",
         )
 
+    history = db.scalars(
+        select(BpmProgress).where(
+            BpmProgress.entity_type
+            == "exercise",
+            BpmProgress.entity_id
+            == exercise_id,
+        )
+    ).all()
+
+    for item in history:
+        db.delete(item)
+
     db.delete(exercise)
     db.commit()
 
-    return Response(status_code=204)
+    return Response(
+        status_code=204
+    )

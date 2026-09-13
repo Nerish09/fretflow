@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.bpm_progress import BpmProgress
 from app.models.song import Song
 
 
@@ -68,6 +69,20 @@ def serialize_song(song: Song):
     }
 
 
+def record_bpm(
+    db: Session,
+    song_id: int,
+    bpm: int,
+):
+    db.add(
+        BpmProgress(
+            entity_type="song",
+            entity_id=song_id,
+            bpm=bpm,
+        )
+    )
+
+
 @router.get("")
 def get_songs(
     db: Session = Depends(get_db),
@@ -89,7 +104,10 @@ def get_song(
     song_id: int,
     db: Session = Depends(get_db),
 ):
-    song = db.get(Song, song_id)
+    song = db.get(
+        Song,
+        song_id,
+    )
 
     if song is None:
         raise HTTPException(
@@ -123,16 +141,27 @@ def create_song(
             detail="Artist is required",
         )
 
-    validate_bpm(data.current_bpm)
-    validate_bpm(data.target_bpm)
+    validate_bpm(
+        data.current_bpm
+    )
 
-    if data.difficulty not in ALLOWED_DIFFICULTIES:
+    validate_bpm(
+        data.target_bpm
+    )
+
+    if (
+        data.difficulty
+        not in ALLOWED_DIFFICULTIES
+    ):
         raise HTTPException(
             status_code=400,
             detail="Invalid difficulty",
         )
 
-    if data.status not in ALLOWED_STATUSES:
+    if (
+        data.status
+        not in ALLOWED_STATUSES
+    ):
         raise HTTPException(
             status_code=400,
             detail="Invalid song status",
@@ -149,6 +178,14 @@ def create_song(
     )
 
     db.add(song)
+    db.flush()
+
+    record_bpm(
+        db,
+        song.id,
+        song.current_bpm,
+    )
+
     db.commit()
     db.refresh(song)
 
@@ -161,7 +198,10 @@ def update_song(
     data: SongUpdate,
     db: Session = Depends(get_db),
 ):
-    song = db.get(Song, song_id)
+    song = db.get(
+        Song,
+        song_id,
+    )
 
     if song is None:
         raise HTTPException(
@@ -192,30 +232,60 @@ def update_song(
         song.artist = artist
 
     if data.current_bpm is not None:
-        validate_bpm(data.current_bpm)
-        song.current_bpm = data.current_bpm
+        validate_bpm(
+            data.current_bpm
+        )
+
+        if (
+            data.current_bpm
+            != song.current_bpm
+        ):
+            song.current_bpm = (
+                data.current_bpm
+            )
+
+            record_bpm(
+                db,
+                song.id,
+                data.current_bpm,
+            )
 
     if data.target_bpm is not None:
-        validate_bpm(data.target_bpm)
-        song.target_bpm = data.target_bpm
+        validate_bpm(
+            data.target_bpm
+        )
+
+        song.target_bpm = (
+            data.target_bpm
+        )
 
     if data.difficulty is not None:
-        if data.difficulty not in ALLOWED_DIFFICULTIES:
+        if (
+            data.difficulty
+            not in ALLOWED_DIFFICULTIES
+        ):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid difficulty",
             )
 
-        song.difficulty = data.difficulty
+        song.difficulty = (
+            data.difficulty
+        )
 
     if data.status is not None:
-        if data.status not in ALLOWED_STATUSES:
+        if (
+            data.status
+            not in ALLOWED_STATUSES
+        ):
             raise HTTPException(
                 status_code=400,
                 detail="Invalid song status",
             )
 
-        song.status = data.status
+        song.status = (
+            data.status
+        )
 
     if data.notes is not None:
         song.notes = data.notes
@@ -234,7 +304,10 @@ def delete_song(
     song_id: int,
     db: Session = Depends(get_db),
 ):
-    song = db.get(Song, song_id)
+    song = db.get(
+        Song,
+        song_id,
+    )
 
     if song is None:
         raise HTTPException(
@@ -242,7 +315,21 @@ def delete_song(
             detail="Song not found",
         )
 
+    history = db.scalars(
+        select(BpmProgress).where(
+            BpmProgress.entity_type
+            == "song",
+            BpmProgress.entity_id
+            == song_id,
+        )
+    ).all()
+
+    for item in history:
+        db.delete(item)
+
     db.delete(song)
     db.commit()
 
-    return Response(status_code=204)
+    return Response(
+        status_code=204
+    )
