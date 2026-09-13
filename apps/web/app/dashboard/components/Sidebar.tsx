@@ -9,6 +9,10 @@ const links = [
     label: "Studio",
   },
   {
+    href: "/dashboard/today",
+    label: "Today",
+  },
+  {
     href: "/dashboard/songs",
     label: "Setlist",
   },

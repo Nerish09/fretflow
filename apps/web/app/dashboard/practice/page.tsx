@@ -9,6 +9,10 @@ import {
 } from "react";
 
 import {
+  useSearchParams,
+} from "next/navigation";
+
+import {
   Exercise,
   PracticeSession,
   Song,
@@ -21,10 +25,12 @@ import {
 
 import Sidebar from "../components/Sidebar";
 
+
 type PracticeTargetType =
   | "song"
   | "exercise"
   | "custom";
+
 
 type PracticeSummary = {
   focus: string;
@@ -33,21 +39,37 @@ type PracticeSummary = {
   notes: string;
 };
 
+
 export default function PracticePage() {
+  const searchParams =
+    useSearchParams();
+
+  const initializedFromUrl =
+    useRef(false);
+
   const [sessions, setSessions] =
     useState<PracticeSession[]>([]);
 
   const [songs, setSongs] =
     useState<Song[]>([]);
 
-  const [exercises, setExercises] =
-    useState<Exercise[]>([]);
+  const [
+    exercises,
+    setExercises,
+  ] = useState<Exercise[]>([]);
 
-  const [targetType, setTargetType] =
-    useState<PracticeTargetType>("song");
+  const [
+    targetType,
+    setTargetType,
+  ] =
+    useState<PracticeTargetType>(
+      "song"
+    );
 
-  const [selectedTarget, setSelectedTarget] =
-    useState("");
+  const [
+    selectedTarget,
+    setSelectedTarget,
+  ] = useState("");
 
   const [focus, setFocus] =
     useState("");
@@ -58,20 +80,30 @@ export default function PracticePage() {
   const [minutes, setMinutes] =
     useState(30);
 
-  const [practiceBpm, setPracticeBpm] =
-    useState(80);
+  const [
+    practiceBpm,
+    setPracticeBpm,
+  ] = useState(80);
 
-  const [timerSeconds, setTimerSeconds] =
-    useState(0);
+  const [
+    timerSeconds,
+    setTimerSeconds,
+  ] = useState(0);
 
-  const [timerRunning, setTimerRunning] =
-    useState(false);
+  const [
+    timerRunning,
+    setTimerRunning,
+  ] = useState(false);
 
-  const [metronomeRunning, setMetronomeRunning] =
-    useState(false);
+  const [
+    metronomeRunning,
+    setMetronomeRunning,
+  ] = useState(false);
 
   const [summary, setSummary] =
-    useState<PracticeSummary | null>(null);
+    useState<PracticeSummary | null>(
+      null
+    );
 
   const [saving, setSaving] =
     useState(false);
@@ -80,10 +112,15 @@ export default function PracticePage() {
     useState("");
 
   const audioContextRef =
-    useRef<AudioContext | null>(null);
+    useRef<AudioContext | null>(
+      null
+    );
 
   const metronomeIntervalRef =
-    useRef<number | null>(null);
+    useRef<number | null>(
+      null
+    );
+
 
   async function loadData() {
     try {
@@ -99,7 +136,9 @@ export default function PracticePage() {
 
       setSessions(sessionData);
       setSongs(songData);
-      setExercises(exerciseData);
+      setExercises(
+        exerciseData
+      );
     } catch {
       setError(
         "Could not load your practice data."
@@ -107,9 +146,105 @@ export default function PracticePage() {
     }
   }
 
+
   useEffect(() => {
     loadData();
   }, []);
+
+
+  useEffect(() => {
+    if (
+      initializedFromUrl.current
+    ) {
+      return;
+    }
+
+    const type =
+      searchParams.get("type");
+
+    const id =
+      searchParams.get("id");
+
+    const bpm =
+      searchParams.get("bpm");
+
+    if (
+      type === "song" &&
+      id &&
+      songs.length > 0
+    ) {
+      const song =
+        songs.find(
+          (item) =>
+            item.id ===
+            Number(id)
+        );
+
+      if (song) {
+        setTargetType("song");
+
+        setSelectedTarget(
+          String(song.id)
+        );
+
+        setFocus(
+          `${song.title} — ${song.artist}`
+        );
+
+        setPracticeBpm(
+          bpm
+            ? Number(bpm)
+            : song.current_bpm
+        );
+
+        initializedFromUrl.current =
+          true;
+      }
+    }
+
+    if (
+      type === "exercise" &&
+      id &&
+      exercises.length > 0
+    ) {
+      const exercise =
+        exercises.find(
+          (item) =>
+            item.id ===
+            Number(id)
+        );
+
+      if (exercise) {
+        setTargetType(
+          "exercise"
+        );
+
+        setSelectedTarget(
+          String(
+            exercise.id
+          )
+        );
+
+        setFocus(
+          exercise.name
+        );
+
+        setPracticeBpm(
+          bpm
+            ? Number(bpm)
+            : exercise.current_bpm
+        );
+
+        initializedFromUrl.current =
+          true;
+      }
+    }
+  }, [
+    searchParams,
+    songs,
+    exercises,
+  ]);
+
 
   useEffect(() => {
     if (!timerRunning) {
@@ -117,16 +252,23 @@ export default function PracticePage() {
     }
 
     const interval =
-      window.setInterval(() => {
-        setTimerSeconds(
-          (current) => current + 1
-        );
-      }, 1000);
+      window.setInterval(
+        () => {
+          setTimerSeconds(
+            (current) =>
+              current + 1
+          );
+        },
+        1000
+      );
 
     return () => {
-      window.clearInterval(interval);
+      window.clearInterval(
+        interval
+      );
     };
   }, [timerRunning]);
+
 
   useEffect(() => {
     if (!metronomeRunning) {
@@ -144,19 +286,21 @@ export default function PracticePage() {
     practiceBpm,
   ]);
 
+
   useEffect(() => {
     return () => {
       stopMetronomeInterval();
 
       if (
         audioContextRef.current &&
-        audioContextRef.current.state !==
-          "closed"
+        audioContextRef.current
+          .state !== "closed"
       ) {
         audioContextRef.current.close();
       }
     };
   }, []);
+
 
   function stopMetronomeInterval() {
     if (
@@ -172,6 +316,7 @@ export default function PracticePage() {
     }
   }
 
+
   function playClick() {
     if (
       typeof window === "undefined"
@@ -179,7 +324,9 @@ export default function PracticePage() {
       return;
     }
 
-    if (!audioContextRef.current) {
+    if (
+      !audioContextRef.current
+    ) {
       audioContextRef.current =
         new AudioContext();
     }
@@ -193,7 +340,8 @@ export default function PracticePage() {
     const gain =
       context.createGain();
 
-    oscillator.type = "square";
+    oscillator.type =
+      "square";
 
     oscillator.frequency.value =
       950;
@@ -205,10 +353,14 @@ export default function PracticePage() {
 
     gain.gain.exponentialRampToValueAtTime(
       0.001,
-      context.currentTime + 0.05
+      context.currentTime +
+        0.05
     );
 
-    oscillator.connect(gain);
+    oscillator.connect(
+      gain
+    );
+
     gain.connect(
       context.destination
     );
@@ -216,9 +368,11 @@ export default function PracticePage() {
     oscillator.start();
 
     oscillator.stop(
-      context.currentTime + 0.06
+      context.currentTime +
+        0.06
     );
   }
+
 
   function startMetronomeInterval() {
     stopMetronomeInterval();
@@ -235,6 +389,7 @@ export default function PracticePage() {
       );
   }
 
+
   async function toggleMetronome() {
     if (
       !audioContextRef.current
@@ -244,8 +399,8 @@ export default function PracticePage() {
     }
 
     if (
-      audioContextRef.current.state ===
-      "suspended"
+      audioContextRef.current
+        .state === "suspended"
     ) {
       await audioContextRef.current.resume();
     }
@@ -254,6 +409,7 @@ export default function PracticePage() {
       (current) => !current
     );
   }
+
 
   function changeBpm(
     amount: number
@@ -270,10 +426,13 @@ export default function PracticePage() {
     );
   }
 
+
   function selectSong(
     songId: string
   ) {
-    setSelectedTarget(songId);
+    setSelectedTarget(
+      songId
+    );
 
     const song =
       songs.find(
@@ -295,6 +454,7 @@ export default function PracticePage() {
     );
   }
 
+
   function selectExercise(
     exerciseId: string
   ) {
@@ -306,7 +466,9 @@ export default function PracticePage() {
       exercises.find(
         (item) =>
           item.id ===
-          Number(exerciseId)
+          Number(
+            exerciseId
+          )
       );
 
     if (!exercise) {
@@ -322,6 +484,7 @@ export default function PracticePage() {
     );
   }
 
+
   function changeTargetType(
     type: PracticeTargetType
   ) {
@@ -329,16 +492,21 @@ export default function PracticePage() {
     setSelectedTarget("");
     setFocus("");
 
+    initializedFromUrl.current =
+      true;
+
     if (type === "custom") {
       setPracticeBpm(80);
     }
   }
 
+
   const timerDisplay =
     useMemo(() => {
       const hours =
         Math.floor(
-          timerSeconds / 3600
+          timerSeconds /
+            3600
         );
 
       const mins =
@@ -364,6 +532,7 @@ export default function PracticePage() {
         .join(":");
     }, [timerSeconds]);
 
+
   function prepareFinish() {
     if (!focus.trim()) {
       setError(
@@ -373,7 +542,9 @@ export default function PracticePage() {
       return;
     }
 
-    if (timerSeconds < 1) {
+    if (
+      timerSeconds < 1
+    ) {
       setError(
         "Start the timer before finishing the session."
       );
@@ -386,21 +557,25 @@ export default function PracticePage() {
     setError("");
 
     setSummary({
-      focus: focus.trim(),
+      focus:
+        focus.trim(),
 
       durationMinutes:
         Math.max(
           1,
           Math.round(
-            timerSeconds / 60
+            timerSeconds /
+              60
           )
         ),
 
       bpm: practiceBpm,
 
-      notes: notes.trim(),
+      notes:
+        notes.trim(),
     });
   }
+
 
   async function saveFinishedSession() {
     if (!summary) {
@@ -419,14 +594,18 @@ export default function PracticePage() {
           ? `${bpmNote}\n${summary.notes}`
           : bpmNote;
 
-      await createPracticeSession({
-        focus: summary.focus,
+      await createPracticeSession(
+        {
+          focus:
+            summary.focus,
 
-        duration_minutes:
-          summary.durationMinutes,
+          duration_minutes:
+            summary.durationMinutes,
 
-        notes: finalNotes,
-      });
+          notes:
+            finalNotes,
+        }
+      );
 
       resetLiveSession();
 
@@ -440,6 +619,7 @@ export default function PracticePage() {
     }
   }
 
+
   function resetLiveSession() {
     setTimerRunning(false);
     setMetronomeRunning(false);
@@ -451,7 +631,11 @@ export default function PracticePage() {
     setNotes("");
     setPracticeBpm(80);
     setSummary(null);
+
+    initializedFromUrl.current =
+      true;
   }
+
 
   async function handleQuickLog(
     event:
@@ -471,14 +655,18 @@ export default function PracticePage() {
         ? `${bpmNote}\n${notes.trim()}`
         : bpmNote;
 
-    await createPracticeSession({
-      focus: focus.trim(),
+    await createPracticeSession(
+      {
+        focus:
+          focus.trim(),
 
-      duration_minutes:
-        minutes,
+        duration_minutes:
+          minutes,
 
-      notes: finalNotes,
-    });
+        notes:
+          finalNotes,
+      }
+    );
 
     setFocus("");
     setNotes("");
@@ -486,6 +674,7 @@ export default function PracticePage() {
 
     await loadData();
   }
+
 
   async function handleDelete(
     session:
@@ -506,13 +695,18 @@ export default function PracticePage() {
     await loadData();
   }
 
+
   const totalMinutes =
     sessions.reduce(
-      (total, session) =>
+      (
+        total,
+        session
+      ) =>
         total +
         session.duration_minutes,
       0
     );
+
 
   return (
     <div className="studio-app">
@@ -632,7 +826,8 @@ export default function PracticePage() {
                         song.id
                       }
                     >
-                      {song.title} —{" "}
+                      {song.title}
+                      {" — "}
                       {song.artist}
                     </option>
                   )
@@ -661,7 +856,9 @@ export default function PracticePage() {
                 </option>
 
                 {exercises.map(
-                  (exercise) => (
+                  (
+                    exercise
+                  ) => (
                     <option
                       key={
                         exercise.id
@@ -672,8 +869,8 @@ export default function PracticePage() {
                     >
                       {
                         exercise.name
-                      }{" "}
-                      —{" "}
+                      }
+                      {" — "}
                       {
                         exercise.category
                       }
@@ -739,7 +936,9 @@ export default function PracticePage() {
 
                 <strong>
                   {practiceBpm}
-                  <span>BPM</span>
+                  <span>
+                    BPM
+                  </span>
                 </strong>
               </div>
 
@@ -1085,8 +1284,9 @@ export default function PracticePage() {
                 0 && (
                 <div className="practice-history-empty">
                   Your sessions will
-                  appear here after you
-                  start practicing.
+                  appear here after
+                  you start
+                  practicing.
                 </div>
               )}
             </div>
