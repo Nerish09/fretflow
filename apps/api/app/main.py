@@ -19,6 +19,9 @@ from app.api.routes.practice_queue import (
 from app.api.routes.practice_sessions import (
     router as practice_sessions_router,
 )
+from app.api.routes.song_catalog import (
+    router as song_catalog_router,
+)
 from app.api.routes.songs import (
     router as songs_router,
 )
@@ -38,7 +41,7 @@ Base.metadata.create_all(
 
 app = FastAPI(
     title="FretFlow API",
-    version="0.5.0",
+    version="0.6.0",
     description=(
         "Backend API for FretFlow "
         "guitar practice tracking."
@@ -67,6 +70,10 @@ app.include_router(
 )
 
 app.include_router(
+    song_catalog_router
+)
+
+app.include_router(
     exercises_router
 )
 
@@ -91,6 +98,6 @@ app.include_router(
 def root():
     return {
         "name": "FretFlow API",
-        "version": "0.5.0",
+        "version": "0.6.0",
         "status": "running",
     }

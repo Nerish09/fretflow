@@ -397,3 +397,47 @@ export async function getPracticeGoals(
 
   return response.json();
 }
+
+export type CatalogSong = {
+  id: string;
+  title: string;
+  artist: string;
+  release: string | null;
+  release_date: string | null;
+};
+
+export type CatalogSearchResponse = {
+  query: string;
+  count: number;
+  results: CatalogSong[];
+};
+
+export async function searchSongCatalog(
+  query: string,
+  limit = 10
+): Promise<CatalogSearchResponse> {
+  const params = new URLSearchParams({
+    q: query,
+    limit: String(limit),
+  });
+
+  const response = await fetch(
+    `${API_URL}/songs/catalog/search?${params.toString()}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response
+      .json()
+      .catch(() => null);
+
+    throw new Error(
+      error?.detail ||
+        "Failed to search song catalog"
+    );
+  }
+
+  return response.json();
+}

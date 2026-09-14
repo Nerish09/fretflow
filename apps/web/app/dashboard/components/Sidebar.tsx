@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 const links = [
   {
     href: "/dashboard",
-    label: "Studio",
+    label: "Home",
   },
   {
     href: "/dashboard/today",
@@ -14,7 +14,7 @@ const links = [
   },
   {
     href: "/dashboard/songs",
-    label: "Setlist",
+    label: "Songs",
   },
   {
     href: "/dashboard/exercises",
@@ -33,53 +33,76 @@ const links = [
 export default function Sidebar() {
   const pathname = usePathname();
 
-  function isActive(href: string) {
-    if (href === "/dashboard") {
-      return pathname === "/dashboard";
+  function isActive(
+    href: string
+  ) {
+    if (
+      href === "/dashboard"
+    ) {
+      return (
+        pathname ===
+        "/dashboard"
+      );
     }
 
-    return pathname.startsWith(href);
+    return pathname.startsWith(
+      href
+    );
   }
 
   return (
-    <header className="studio-nav">
-      <Link
-        href="/dashboard"
-        className="studio-brand"
-      >
-        <div className="studio-brand-symbol">
-          F/
-        </div>
+    <header className="ff-nav">
+      <div className="ff-nav-inner">
+        <Link
+          href="/dashboard"
+          className="ff-brand"
+        >
+          <span className="ff-brand-mark">
+            F/
+          </span>
 
-        <div>
-          <strong>FretFlow</strong>
-          <span>PRACTICE STUDIO</span>
-        </div>
-      </Link>
+          <div>
+            <strong>
+              FretFlow
+            </strong>
 
-      <nav className="studio-nav-links">
-        {links.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={
-              isActive(link.href)
-                ? "studio-nav-link studio-nav-link-active"
-                : "studio-nav-link"
-            }
-          >
-            {link.label}
-          </Link>
-        ))}
-      </nav>
+            <small>
+              GUITAR PRACTICE
+            </small>
+          </div>
+        </Link>
 
-      <Link
-        href="/dashboard/practice"
-        className="studio-nav-practice"
-      >
-        <span className="studio-record-dot" />
-        Start session
-      </Link>
+        <nav className="ff-nav-links">
+          {links.map(
+            (link) => (
+              <Link
+                key={
+                  link.href
+                }
+                href={
+                  link.href
+                }
+                className={
+                  isActive(
+                    link.href
+                  )
+                    ? "ff-nav-link ff-nav-link-active"
+                    : "ff-nav-link"
+                }
+              >
+                {link.label}
+              </Link>
+            )
+          )}
+        </nav>
+
+        <Link
+          href="/dashboard/practice"
+          className="ff-button ff-button-primary ff-nav-start"
+        >
+          ▶ Practice
+        </Link>
+      </div>
     </header>
   );
 }

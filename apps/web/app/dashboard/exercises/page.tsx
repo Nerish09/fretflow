@@ -15,6 +15,8 @@ import {
 } from "../../../lib/api";
 
 import Sidebar from "../components/Sidebar";
+import PageHeader from "../components/PageHeader";
+import ProgressBar from "../components/ProgressBar";
 
 const categories = [
   "Technique",
@@ -25,31 +27,78 @@ const categories = [
   "Improvisation",
 ];
 
+function calculateProgress(
+  current: number,
+  target: number
+) {
+  if (
+    target <= 0
+  ) {
+    return 0;
+  }
+
+  return Math.min(
+    100,
+    Math.round(
+      (current / target) *
+        100
+    )
+  );
+}
+
 export default function ExercisesPage() {
   const [
     exercises,
     setExercises,
-  ] = useState<Exercise[]>([]);
+  ] =
+    useState<
+      Exercise[]
+    >([]);
 
-  const [showForm, setShowForm] =
+  const [
+    showForm,
+    setShowForm,
+  ] =
     useState(false);
 
-  const [editingId, setEditingId] =
-    useState<number | null>(null);
+  const [
+    editingId,
+    setEditingId,
+  ] =
+    useState<
+      number | null
+    >(null);
 
-  const [name, setName] =
+  const [
+    name,
+    setName,
+  ] =
     useState("");
 
-  const [category, setCategory] =
-    useState("Technique");
+  const [
+    category,
+    setCategory,
+  ] =
+    useState(
+      "Technique"
+    );
 
-  const [currentBpm, setCurrentBpm] =
+  const [
+    currentBpm,
+    setCurrentBpm,
+  ] =
     useState(60);
 
-  const [targetBpm, setTargetBpm] =
+  const [
+    targetBpm,
+    setTargetBpm,
+  ] =
     useState(100);
 
-  const [notes, setNotes] =
+  const [
+    notes,
+    setNotes,
+  ] =
     useState("");
 
   async function loadExercises() {
@@ -64,27 +113,41 @@ export default function ExercisesPage() {
 
   function resetForm() {
     setName("");
-    setCategory("Technique");
+    setCategory(
+      "Technique"
+    );
     setCurrentBpm(60);
     setTargetBpm(100);
     setNotes("");
-    setEditingId(null);
+    setEditingId(
+      null
+    );
   }
 
   function startEdit(
-    exercise: Exercise
+    exercise:
+      Exercise
   ) {
-    setEditingId(exercise.id);
-    setName(exercise.name);
+    setEditingId(
+      exercise.id
+    );
+
+    setName(
+      exercise.name
+    );
+
     setCategory(
       exercise.category
     );
+
     setCurrentBpm(
       exercise.current_bpm
     );
+
     setTargetBpm(
       exercise.target_bpm
     );
+
     setNotes(
       exercise.notes || ""
     );
@@ -93,7 +156,8 @@ export default function ExercisesPage() {
 
     window.scrollTo({
       top: 0,
-      behavior: "smooth",
+      behavior:
+        "smooth",
     });
   }
 
@@ -104,17 +168,26 @@ export default function ExercisesPage() {
     event.preventDefault();
 
     const payload = {
-      name: name.trim(),
+      name:
+        name.trim(),
+
       category,
+
       current_bpm:
         currentBpm,
+
       target_bpm:
         targetBpm,
+
       notes:
-        notes.trim() || null,
+        notes.trim() ||
+        null,
     };
 
-    if (editingId !== null) {
+    if (
+      editingId !==
+      null
+    ) {
       await updateExercise(
         editingId,
         payload
@@ -126,13 +199,15 @@ export default function ExercisesPage() {
     }
 
     resetForm();
+
     setShowForm(false);
 
     await loadExercises();
   }
 
   async function handleDelete(
-    exercise: Exercise
+    exercise:
+      Exercise
   ) {
     if (
       !window.confirm(
@@ -150,73 +225,71 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="studio-app">
+    <div>
       <Sidebar />
 
-      <main className="studio-page">
-        <section className="drill-hero">
-          <div>
-            <p className="studio-kicker">
-              TECHNIQUE RACK
-            </p>
+      <main className="ff-page">
+        <PageHeader
+          eyebrow="DRILLS"
+          title="Technique library"
+          description="Keep your warm-ups, exercises and technique work organized in one place."
+          actions={
+            <button
+              className="ff-button ff-button-primary"
+              onClick={() => {
+                if (
+                  showForm
+                ) {
+                  resetForm();
+                }
 
-            <h1>
-              Build cleaner.
-              <br />
-              Play faster.
-            </h1>
-          </div>
-
-          <button
-            className="studio-action-button"
-            onClick={() => {
-              if (showForm) {
-                resetForm();
-              }
-
-              setShowForm(
-                !showForm
-              );
-            }}
-          >
-            {showForm
-              ? "Close editor"
-              : "+ New drill"}
-          </button>
-        </section>
+                setShowForm(
+                  !showForm
+                );
+              }}
+            >
+              {showForm
+                ? "Close"
+                : "+ Add drill"}
+            </button>
+          }
+        />
 
         {showForm && (
-          <section className="studio-editor">
-            <div className="studio-editor-heading">
+          <section className="ff-panel ff-editor-panel">
+            <div className="ff-panel-header">
               <div>
-                <span>
-                  {editingId
-                    ? "EDITING DRILL"
-                    : "NEW DRILL"}
-                </span>
-
                 <h2>
                   {editingId
-                    ? name
-                    : "Add an exercise"}
+                    ? "Edit drill"
+                    : "Add drill"}
                 </h2>
+
+                <p>
+                  Track technique
+                  work just like a
+                  song.
+                </p>
               </div>
             </div>
 
             <form
-              className="studio-song-form"
+              className="ff-form-grid"
               onSubmit={
                 handleSubmit
               }
             >
               <label>
                 <span>
-                  EXERCISE
+                  Exercise
                 </span>
 
                 <input
+                  className="ff-input"
                   required
-                  value={name}
+                  value={
+                    name
+                  }
                   onChange={(
                     event
                   ) =>
@@ -226,17 +299,20 @@ export default function ExercisesPage() {
                         .value
                     )
                   }
-                  placeholder="Alternate Picking"
+                  placeholder="Alternate picking"
                 />
               </label>
 
               <label>
                 <span>
-                  CATEGORY
+                  Category
                 </span>
 
                 <select
-                  value={category}
+                  className="ff-select"
+                  value={
+                    category
+                  }
                   onChange={(
                     event
                   ) =>
@@ -248,84 +324,87 @@ export default function ExercisesPage() {
                   }
                 >
                   {categories.map(
-                    (item) => (
+                    (
+                      item
+                    ) => (
                       <option
                         key={
                           item
                         }
                       >
-                        {item}
+                        {
+                          item
+                        }
                       </option>
                     )
                   )}
                 </select>
               </label>
 
-              <div className="studio-bpm-editor">
-                <label>
-                  <span>
-                    CURRENT BPM
-                  </span>
-
-                  <input
-                    type="number"
-                    min="20"
-                    max="300"
-                    value={
-                      currentBpm
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setCurrentBpm(
-                        Number(
-                          event
-                            .target
-                            .value
-                        )
-                      )
-                    }
-                  />
-                </label>
-
-                <div>
-                  →
-                </div>
-
-                <label>
-                  <span>
-                    TARGET BPM
-                  </span>
-
-                  <input
-                    type="number"
-                    min="20"
-                    max="300"
-                    value={
-                      targetBpm
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setTargetBpm(
-                        Number(
-                          event
-                            .target
-                            .value
-                        )
-                      )
-                    }
-                  />
-                </label>
-              </div>
-
-              <label className="studio-form-notes">
+              <label>
                 <span>
-                  NOTES
+                  Current BPM
+                </span>
+
+                <input
+                  className="ff-input"
+                  type="number"
+                  min="20"
+                  max="300"
+                  value={
+                    currentBpm
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setCurrentBpm(
+                      Number(
+                        event
+                          .target
+                          .value
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label>
+                <span>
+                  Target BPM
+                </span>
+
+                <input
+                  className="ff-input"
+                  type="number"
+                  min="20"
+                  max="300"
+                  value={
+                    targetBpm
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setTargetBpm(
+                      Number(
+                        event
+                          .target
+                          .value
+                      )
+                    )
+                  }
+                />
+              </label>
+
+              <label className="ff-form-full">
+                <span>
+                  Notes
                 </span>
 
                 <textarea
-                  value={notes}
+                  className="ff-textarea"
+                  value={
+                    notes
+                  }
                   onChange={(
                     event
                   ) =>
@@ -335,159 +414,138 @@ export default function ExercisesPage() {
                         .value
                     )
                   }
-                  placeholder="Keep your wrist loose and focus on even attack..."
+                  placeholder="Technique cues, picking pattern, timing..."
                 />
               </label>
 
-              <button className="studio-save-button">
-                {editingId
-                  ? "Save drill"
-                  : "Add drill"}
-              </button>
+              <div className="ff-form-full">
+                <button
+                  className="ff-button ff-button-primary"
+                >
+                  {editingId
+                    ? "Save changes"
+                    : "Add drill"}
+                </button>
+              </div>
             </form>
           </section>
         )}
 
-        <section className="drill-rack">
-          {exercises.map(
-            (
-              exercise,
-              index
-            ) => {
-              const progress =
-                Math.min(
-                  100,
-                  Math.round(
-                    (exercise.current_bpm /
-                      exercise.target_bpm) *
-                      100
-                  )
-                );
+        <section className="ff-panel">
+          <div className="ff-panel-header">
+            <div>
+              <h2>
+                Drills
+              </h2>
 
-              return (
-                <article
-                  className="drill-module"
-                  key={
-                    exercise.id
-                  }
-                >
-                  <div className="drill-module-number">
-                    {String(
-                      index + 1
-                    ).padStart(
-                      2,
-                      "0"
-                    )}
-                  </div>
+              <p>
+                {
+                  exercises.length
+                }{" "}
+                total
+              </p>
+            </div>
+          </div>
 
-                  <div className="drill-module-info">
-                    <span>
-                      {
-                        exercise.category
+          {exercises.length >
+          0 ? (
+            <div className="ff-drill-list">
+              {exercises.map(
+                (
+                  exercise
+                ) => {
+                  const progress =
+                    calculateProgress(
+                      exercise.current_bpm,
+                      exercise.target_bpm
+                    );
+
+                  return (
+                    <article
+                      key={
+                        exercise.id
                       }
-                    </span>
+                      className="ff-drill-row"
+                    >
+                      <div className="ff-drill-main">
+                        <span>
+                          {
+                            exercise.category
+                          }
+                        </span>
 
-                    <h2>
-                      {
-                        exercise.name
-                      }
-                    </h2>
+                        <strong>
+                          {
+                            exercise.name
+                          }
+                        </strong>
 
-                    <p>
-                      {exercise.notes ||
-                        "No notes added."}
-                    </p>
-                  </div>
+                        {exercise.notes && (
+                          <small>
+                            {
+                              exercise.notes
+                            }
+                          </small>
+                        )}
+                      </div>
 
-                  <div className="drill-dial">
-                    <span>
-                      CURRENT
-                    </span>
+                      <div className="ff-drill-tempo">
+                        <strong>
+                          {
+                            exercise.current_bpm
+                          }
+                        </strong>
 
-                    <strong>
-                      {
-                        exercise.current_bpm
-                      }
-                    </strong>
+                        <small>
+                          →{" "}
+                          {
+                            exercise.target_bpm
+                          }{" "}
+                          BPM
+                        </small>
+                      </div>
 
-                    <small>
-                      BPM
-                    </small>
-                  </div>
-
-                  <div className="drill-dial drill-dial-target">
-                    <span>
-                      TARGET
-                    </span>
-
-                    <strong>
-                      {
-                        exercise.target_bpm
-                      }
-                    </strong>
-
-                    <small>
-                      BPM
-                    </small>
-                  </div>
-
-                  <div className="drill-meter">
-                    <div>
-                      <span
-                        style={{
-                          height: `${progress}%`,
-                        }}
+                      <ProgressBar
+                        value={
+                          progress
+                        }
                       />
-                    </div>
 
-                    <small>
-                      {progress}%
-                    </small>
-                  </div>
+                      <div className="ff-row-actions">
+                        <button
+                          className="ff-button"
+                          onClick={() =>
+                            startEdit(
+                              exercise
+                            )
+                          }
+                        >
+                          Edit
+                        </button>
 
-                  <div className="drill-controls">
-                    <button
-                      onClick={() =>
-                        startEdit(
-                          exercise
-                        )
-                      }
-                    >
-                      EDIT
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        handleDelete(
-                          exercise
-                        )
-                      }
-                    >
-                      REMOVE
-                    </button>
-                  </div>
-                </article>
-              );
-            }
+                        <button
+                          className="ff-icon-button"
+                          onClick={() =>
+                            handleDelete(
+                              exercise
+                            )
+                          }
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </article>
+                  );
+                }
+              )}
+            </div>
+          ) : (
+            <div className="ff-empty">
+              Add a drill to
+              start building your
+              technique library.
+            </div>
           )}
-
-          {exercises.length ===
-            0 &&
-            !showForm && (
-              <div className="setlist-empty">
-                <span>⌁</span>
-
-                <h2>
-                  Your rack is empty.
-                </h2>
-
-                <p>
-                  Add a scale,
-                  technique, rhythm
-                  drill, or warm-up.
-                </p>
-              </div>
-            )}
         </section>
       </main>
     </div>

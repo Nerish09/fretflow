@@ -5,15 +5,19 @@ import {
   useState,
 } from "react";
 
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+} from "next/navigation";
 
 import Sidebar from "../components/Sidebar";
-
+import PageHeader from "../components/PageHeader";
+import ProgressBar from "../components/ProgressBar";
+import StatCard from "../components/StatCard";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env
+    .NEXT_PUBLIC_API_URL ||
   "http://127.0.0.1:8000";
-
 
 type QueueItem = {
   type:
@@ -21,9 +25,12 @@ type QueueItem = {
     | "exercise"
     | "warmup";
 
-  id: number | null;
+  id:
+    | number
+    | null;
 
   name: string;
+
   subtitle: string;
 
   current_bpm:
@@ -39,13 +46,13 @@ type QueueItem = {
   suggested_minutes: number;
 };
 
-
 type PracticeQueue = {
   requested_minutes: number;
+
   planned_minutes: number;
+
   items: QueueItem[];
 };
-
 
 const durationOptions = [
   20,
@@ -54,63 +61,87 @@ const durationOptions = [
   60,
 ];
 
-
 export default function TodayPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
-  const [minutes, setMinutes] =
+  const [
+    minutes,
+    setMinutes,
+  ] =
     useState(30);
 
-  const [queue, setQueue] =
-    useState<PracticeQueue | null>(
-      null
-    );
+  const [
+    queue,
+    setQueue,
+  ] =
+    useState<
+      PracticeQueue | null
+    >(null);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
-
 
   async function loadQueue(
     requestedMinutes: number
   ) {
-    setLoading(true);
-    setError("");
+    setLoading(
+      true
+    );
+
+    setError(
+      ""
+    );
 
     try {
-      const response = await fetch(
-        `${API_URL}/practice-queue?minutes=${requestedMinutes}`,
-        {
-          cache: "no-store",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Unable to build practice queue."
+      const response =
+        await fetch(
+          `${API_URL}/practice-queue?minutes=${requestedMinutes}`,
+          {
+            cache:
+              "no-store",
+          }
         );
+
+      if (
+        !response.ok
+      ) {
+        throw new Error();
       }
 
       const data =
         await response.json();
 
-      setQueue(data);
+      setQueue(
+        data
+      );
     } catch {
       setError(
-        "Could not build today's practice."
+        "Could not build your practice plan."
       );
     } finally {
-      setLoading(false);
+      setLoading(
+        false
+      );
     }
   }
 
-
   useEffect(() => {
-    loadQueue(minutes);
-  }, [minutes]);
-
+    loadQueue(
+      minutes
+    );
+  }, [
+    minutes,
+  ]);
 
   function startItem(
     item: QueueItem
@@ -120,11 +151,18 @@ export default function TodayPage() {
       "warmup"
     ) {
       const params =
-        new URLSearchParams({
-          type: "custom",
-          focus: item.name,
-          bpm: "80",
-        });
+        new URLSearchParams(
+          {
+            type:
+              "custom",
+
+            focus:
+              item.name,
+
+            bpm:
+              "80",
+          }
+        );
 
       router.push(
         `/dashboard/practice?${params.toString()}`
@@ -134,80 +172,72 @@ export default function TodayPage() {
     }
 
     if (
-      item.id === null ||
-      item.current_bpm === null
+      item.id ===
+        null ||
+      item.current_bpm ===
+        null
     ) {
       return;
     }
 
     const params =
-      new URLSearchParams({
-        type: item.type,
-        id: String(item.id),
-        bpm: String(
-          item.current_bpm
-        ),
-      });
+      new URLSearchParams(
+        {
+          type:
+            item.type,
+
+          id:
+            String(
+              item.id
+            ),
+
+          bpm:
+            String(
+              item.current_bpm
+            ),
+        }
+      );
 
     router.push(
       `/dashboard/practice?${params.toString()}`
     );
   }
 
-
-  function getItemLabel(
+  function getTypeLabel(
     item: QueueItem
   ) {
     if (
       item.type ===
       "warmup"
     ) {
-      return "WARM-UP";
+      return "Warm-up";
     }
 
     if (
       item.type ===
       "song"
     ) {
-      return "SONG";
+      return "Song";
     }
 
-    return (
-      item.subtitle.toUpperCase()
-    );
+    return "Drill";
   }
 
-
   return (
-    <div className="studio-app">
+    <div>
       <Sidebar />
 
-      <main className="studio-page today-page">
-        <section className="today-hero">
+      <main className="ff-page">
+        <PageHeader
+          eyebrow="TODAY"
+          title="Your practice plan"
+          description="Choose how much time you have. FretFlow fills the session with focused work based on your current songs and drills."
+        />
+
+        <section className="ff-duration-picker">
           <div>
-            <p className="studio-kicker">
-              TODAY&apos;S PRACTICE
-            </p>
-
-            <h1>
-              Pick up.
-              <br />
-              Plug in.
-              <br />
-              Play.
-            </h1>
-
-            <p>
-              FretFlow builds a focused
-              session from the songs and
-              drills that need the most
-              attention.
-            </p>
-          </div>
-
-          <div className="today-duration-panel">
-            <span>
-              I HAVE
+            <span className="ff-section-label">
+              TIME AVAILABLE
             </span>
 
             <strong>
@@ -216,108 +246,114 @@ export default function TodayPage() {
                 MIN
               </small>
             </strong>
+          </div>
 
-            <div className="today-duration-options">
-              {durationOptions.map(
-                (option) => (
-                  <button
-                    key={option}
-                    className={
-                      minutes ===
+          <div className="ff-duration-buttons">
+            {durationOptions.map(
+              (
+                option
+              ) => (
+                <button
+                  key={
+                    option
+                  }
+                  type="button"
+                  className={
+                    minutes ===
+                    option
+                      ? "ff-duration-button ff-duration-button-active"
+                      : "ff-duration-button"
+                  }
+                  onClick={() =>
+                    setMinutes(
                       option
-                        ? "today-duration-active"
-                        : ""
-                    }
-                    onClick={() =>
-                      setMinutes(
-                        option
-                      )
-                    }
-                  >
-                    {option}
-                  </button>
-                )
-              )}
-            </div>
-          </div>
-        </section>
-
-        <section className="today-summary-strip">
-          <div>
-            <span>
-              PLANNED
-            </span>
-
-            <strong>
-              {loading
-                ? "—"
-                : queue
-                    ?.planned_minutes ??
-                  0}
-
-              <small>
-                {" "}MIN
-              </small>
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              ITEMS
-            </span>
-
-            <strong>
-              {loading
-                ? "—"
-                : queue?.items
-                    .length ?? 0}
-            </strong>
-          </div>
-
-          <div>
-            <span>
-              STRATEGY
-            </span>
-
-            <strong>
-              Weakest first
-            </strong>
+                    )
+                  }
+                >
+                  {
+                    option
+                  }
+                </button>
+              )
+            )}
           </div>
         </section>
 
         {error && (
-          <div className="today-error">
+          <div className="ff-error-box">
             {error}
           </div>
         )}
 
-        <section className="today-queue-section">
-          <div className="today-section-heading">
-            <div>
-              <p className="studio-kicker">
-                SESSION QUEUE
-              </p>
+        <section className="ff-grid ff-grid-3 ff-today-stats">
+          <StatCard
+            label="Planned"
+            value={
+              loading
+                ? "—"
+                : queue
+                    ?.planned_minutes ??
+                  0
+            }
+            suffix="MIN"
+            detail={`of ${minutes} available`}
+            accent
+          />
 
+          <StatCard
+            label="Blocks"
+            value={
+              loading
+                ? "—"
+                : queue
+                    ?.items
+                    .length ??
+                  0
+            }
+            detail="Focused practice blocks"
+          />
+
+          <StatCard
+            label="Approach"
+            value="Weakest first"
+            detail="Prioritizes the biggest skill gaps"
+          />
+        </section>
+
+        <section className="ff-panel ff-plan-panel">
+          <div className="ff-panel-header">
+            <div>
               <h2>
-                Today&apos;s work.
+                Session plan
               </h2>
+
+              <p>
+                Work through these
+                in order, or jump
+                into any block.
+              </p>
             </div>
 
-            <p>
-              Balanced to fill your
-              available time.
-            </p>
+            {!loading &&
+              queue && (
+                <span className="ff-plan-total">
+                  {
+                    queue.planned_minutes
+                  }{" "}
+                  MIN TOTAL
+                </span>
+              )}
           </div>
 
           {loading ? (
-            <div className="today-loading">
+            <div className="ff-empty">
               Building your
               session...
             </div>
           ) : queue &&
             queue.items.length >
               0 ? (
-            <div className="today-queue">
+            <div className="ff-plan-list">
               {queue.items.map(
                 (
                   item,
@@ -325,43 +361,39 @@ export default function TodayPage() {
                 ) => (
                   <article
                     key={`${item.type}-${item.id ?? "none"}-${index}`}
-                    className={
-                      item.type ===
-                      "warmup"
-                        ? "today-queue-item today-queue-item-warmup"
-                        : "today-queue-item"
-                    }
+                    className="ff-plan-row"
                   >
-                    <span className="today-item-number">
+                    <div className="ff-plan-index">
                       {String(
-                        index + 1
+                        index +
+                          1
                       ).padStart(
                         2,
                         "0"
                       )}
-                    </span>
+                    </div>
 
-                    <div className="today-item-main">
-                      <span>
-                        {getItemLabel(
+                    <div className="ff-plan-main">
+                      <span className="ff-plan-type">
+                        {getTypeLabel(
                           item
                         )}
                       </span>
 
-                      <h2>
+                      <strong>
                         {
                           item.name
                         }
-                      </h2>
+                      </strong>
 
-                      <p>
+                      <small>
                         {
                           item.subtitle
                         }
-                      </p>
+                      </small>
                     </div>
 
-                    <div className="today-time">
+                    <div className="ff-plan-duration">
                       <strong>
                         {
                           item.suggested_minutes
@@ -373,118 +405,85 @@ export default function TodayPage() {
                       </span>
                     </div>
 
-                    {item.current_bpm !==
-                      null &&
-                    item.target_bpm !==
-                      null ? (
-                      <div className="today-bpm">
-                        <span>
-                          TEMPO
-                        </span>
+                    <div className="ff-plan-tempo">
+                      {item.current_bpm !==
+                        null &&
+                      item.target_bpm !==
+                        null ? (
+                        <>
+                          <span>
+                            TEMPO
+                          </span>
 
-                        <div>
                           <strong>
                             {
                               item.current_bpm
                             }
+
+                            <small>
+                              {" "}
+                              →{" "}
+                              {
+                                item.target_bpm
+                              }
+                            </small>
                           </strong>
+                        </>
+                      ) : (
+                        <>
+                          <span>
+                            FOCUS
+                          </span>
 
-                          <small>
-                            →{" "}
-                            {
-                              item.target_bpm
-                            }{" "}
-                            BPM
-                          </small>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="today-bpm">
-                        <span>
-                          FOCUS
-                        </span>
-
-                        <div>
                           <strong>
-                            —
+                            Prep
                           </strong>
+                        </>
+                      )}
+                    </div>
 
-                          <small>
-                            Get loose
-                          </small>
-                        </div>
-                      </div>
-                    )}
-
-                    {item.type !==
-                    "warmup" ? (
-                      <div className="today-progress">
-                        <div>
-                          <span
-                            style={{
-                              width: `${item.progress}%`,
-                            }}
-                          />
-                        </div>
-
-                        <small>
-                          {
+                    <div className="ff-plan-progress">
+                      {item.type ===
+                      "warmup" ? (
+                        <ProgressBar
+                          value={
+                            100
+                          }
+                          label="Ready"
+                          showValue={
+                            false
+                          }
+                        />
+                      ) : (
+                        <ProgressBar
+                          value={
                             item.progress
                           }
-                          %
-                        </small>
-                      </div>
-                    ) : (
-                      <div className="today-progress today-progress-warmup">
-                        <div>
-                          <span
-                            style={{
-                              width:
-                                "100%",
-                            }}
-                          />
-                        </div>
-
-                        <small>
-                          READY
-                        </small>
-                      </div>
-                    )}
+                          label="Progress"
+                        />
+                      )}
+                    </div>
 
                     <button
-                      className="today-start-button"
+                      type="button"
+                      className="ff-button ff-plan-start"
                       onClick={() =>
                         startItem(
                           item
                         )
                       }
                     >
-                      START
-                      <span>
-                        →
-                      </span>
+                      Start
                     </button>
                   </article>
                 )
               )}
             </div>
           ) : (
-            <div className="today-empty">
-              <span>
-                ♪
-              </span>
-
-              <h2>
-                Nothing to queue
-                yet.
-              </h2>
-
-              <p>
-                Add some songs or
-                drills and FretFlow
-                will build your
-                practice session.
-              </p>
+            <div className="ff-empty">
+              Add a song or drill
+              to build your first
+              practice plan.
             </div>
           )}
         </section>

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import {
   useEffect,
   useMemo,
@@ -8,355 +10,550 @@ import {
 
 import {
   Exercise,
+  PracticeGoals,
   PracticeSession,
   Song,
   getExercises,
+  getPracticeGoals,
   getPracticeSessions,
   getSongs,
 } from "../../lib/api";
 
+import {
+  getPracticeGoalSettings,
+} from "../../lib/settings/practiceGoals";
+
 import Sidebar from "./components/Sidebar";
+import PageHeader from "./components/PageHeader";
+import ProgressBar from "./components/ProgressBar";
+import StatCard from "./components/StatCard";
+
+function calculateProgress(
+  current: number,
+  target: number
+) {
+  if (target <= 0) {
+    return 0;
+  }
+
+  return Math.min(
+    100,
+    Math.round(
+      (current / target) * 100
+    )
+  );
+}
 
 export default function DashboardPage() {
-  const [songs, setSongs] =
+  const [
+    songs,
+    setSongs,
+  ] =
     useState<Song[]>([]);
 
-  const [exercises, setExercises] =
+  const [
+    exercises,
+    setExercises,
+  ] =
     useState<Exercise[]>([]);
 
-  const [sessions, setSessions] =
+  const [
+    sessions,
+    setSessions,
+  ] =
     useState<PracticeSession[]>([]);
 
-  const [loading, setLoading] =
+  const [
+    goals,
+    setGoals,
+  ] =
+    useState<PracticeGoals | null>(
+      null
+    );
+
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
   useEffect(() => {
-    async function load() {
+    async function loadData() {
       try {
+        const settings =
+          getPracticeGoalSettings();
+
         const [
           songData,
           exerciseData,
           sessionData,
-        ] = await Promise.all([
-          getSongs(),
-          getExercises(),
-          getPracticeSessions(),
-        ]);
+          goalData,
+        ] =
+          await Promise.all([
+            getSongs(),
+            getExercises(),
+            getPracticeSessions(),
+            getPracticeGoals(
+              settings.dailyMinutes,
+              settings.weeklyMinutes
+            ),
+          ]);
 
         setSongs(songData);
         setExercises(exerciseData);
         setSessions(sessionData);
+        setGoals(goalData);
       } finally {
         setLoading(false);
       }
     }
 
-    load();
+    loadData();
   }, []);
 
-  const totalMinutes = useMemo(
-    () =>
-      sessions.reduce(
-        (total, session) =>
-          total +
-          session.duration_minutes,
-        0
-      ),
-    [sessions]
-  );
-
-  const averageProgress = useMemo(() => {
-    if (!songs.length) {
-      return 0;
-    }
-
-    const total = songs.reduce(
-      (sum, song) => {
-        const progress =
-          song.target_bpm > 0
-            ? Math.min(
-                100,
-                Math.round(
-                  (song.current_bpm /
-                    song.target_bpm) *
-                    100
-                )
-              )
-            : 0;
-
-        return sum + progress;
-      },
+  const totalMinutes =
+    sessions.reduce(
+      (
+        total,
+        session
+      ) =>
+        total +
+        session.duration_minutes,
       0
     );
 
-    return Math.round(
-      total / songs.length
-    );
-  }, [songs]);
-
   const mastered =
     songs.filter(
-      (song) =>
-        song.status === "Mastered"
+      (
+        song
+      ) =>
+        song.status ===
+        "Mastered"
     ).length;
 
-  const latestSession =
-    sessions[0] ?? null;
+  const averageSongProgress =
+    useMemo(() => {
+      if (
+        songs.length ===
+        0
+      ) {
+        return 0;
+      }
+
+      return Math.round(
+        songs.reduce(
+          (
+            total,
+            song
+          ) =>
+            total +
+            calculateProgress(
+              song.current_bpm,
+              song.target_bpm
+            ),
+          0
+        ) / songs.length
+      );
+    }, [
+      songs,
+    ]);
+
+  const recentSessions =
+    sessions.slice(
+      0,
+      4
+    );
+
+  const focusSongs =
+    [...songs]
+      .filter(
+        (
+          song
+        ) =>
+          song.status !==
+          "Mastered"
+      )
+      .sort(
+        (
+          a,
+          b
+        ) =>
+          calculateProgress(
+            a.current_bpm,
+            a.target_bpm
+          ) -
+          calculateProgress(
+            b.current_bpm,
+            b.target_bpm
+          )
+      )
+      .slice(
+        0,
+        3
+      );
 
   return (
-    <div className="studio-app">
+    <div>
       <Sidebar />
 
-      <main className="studio-page">
-        <section className="studio-hero">
-          <div>
-            <p className="studio-kicker">
-              FRET / FLOW
-            </p>
+      <main className="ff-page">
+        <PageHeader
+          eyebrow="HOME"
+          title="Practice with purpose"
+          description="Your songs, drills, goals and recent practice in one place."
+          actions={
+            <>
+              <Link
+                href="/dashboard/today"
+                className="ff-button"
+              >
+                View today
+              </Link>
 
-            <h1>
-              Make every
-              <br />
-              minute count.
-            </h1>
+              <Link
+                href="/dashboard/practice"
+                className="ff-button ff-button-primary"
+              >
+                ▶ Start practice
+              </Link>
+            </>
+          }
+        />
 
-            <p className="studio-hero-copy">
-              A focused practice space for
-              building technique, learning
-              songs, and tracking the speed
-              you gain along the way.
-            </p>
-          </div>
-
-          <div className="studio-hero-record">
-            <span>YOUR PRACTICE</span>
-
-            <strong>
-              {loading
-                ? "--"
+        <section className="ff-grid ff-grid-4 ff-home-stats">
+          <StatCard
+            label="Practice time"
+            value={
+              loading
+                ? "—"
                 : Math.floor(
-                    totalMinutes / 60
-                  )}
-              <small>H</small>
-            </strong>
+                    totalMinutes /
+                      60
+                  )
+            }
+            suffix="H"
+            detail={`${totalMinutes % 60} extra minutes`}
+            accent
+          />
 
-            <p>
-              {totalMinutes % 60} minutes
-              beyond the hour
-            </p>
-          </div>
+          <StatCard
+            label="Current streak"
+            value={
+              loading
+                ? "—"
+                : goals
+                    ?.streaks
+                    .current ??
+                  0
+            }
+            suffix="DAYS"
+            detail={`Best: ${goals?.streaks.longest ?? 0} days`}
+          />
+
+          <StatCard
+            label="Songs"
+            value={
+              loading
+                ? "—"
+                : songs.length
+            }
+            detail={`${mastered} mastered`}
+          />
+
+          <StatCard
+            label="Average speed"
+            value={
+              loading
+                ? "—"
+                : averageSongProgress
+            }
+            suffix="%"
+            detail="Toward song BPM targets"
+          />
         </section>
 
-        <section className="studio-tape-strip">
-          <div>
-            <span>SONGS</span>
-            <strong>
-              {loading
-                ? "—"
-                : songs.length}
-            </strong>
-          </div>
-
-          <div>
-            <span>MASTERED</span>
-            <strong>
-              {loading ? "—" : mastered}
-            </strong>
-          </div>
-
-          <div>
-            <span>AVG. SPEED</span>
-            <strong>
-              {loading
-                ? "—"
-                : `${averageProgress}%`}
-            </strong>
-          </div>
-
-          <div>
-            <span>DRILLS</span>
-            <strong>
-              {loading
-                ? "—"
-                : exercises.length}
-            </strong>
-          </div>
-
-          <div>
-            <span>SESSIONS</span>
-            <strong>
-              {loading
-                ? "—"
-                : sessions.length}
-            </strong>
-          </div>
-        </section>
-
-        <section className="studio-dashboard-columns">
-          <div className="studio-setlist-section">
-            <div className="studio-section-heading">
+        <section className="ff-grid ff-grid-2 ff-home-main">
+          <article className="ff-panel">
+            <div className="ff-panel-header">
               <div>
-                <p className="studio-kicker">
-                  CURRENT SETLIST
-                </p>
-
                 <h2>
-                  Keep these moving.
+                  Today&apos;s goal
                 </h2>
+
+                <p>
+                  Keep your practice
+                  streak moving.
+                </p>
               </div>
 
-              <a href="/dashboard/songs">
-                Full setlist →
-              </a>
+              <Link
+                href="/dashboard/progress"
+                className="ff-panel-link"
+              >
+                Progress →
+              </Link>
             </div>
 
-            <div className="studio-dashboard-setlist">
-              {songs.length === 0 ? (
-                <div className="studio-empty-line">
-                  Add a song to begin your
-                  setlist.
-                </div>
-              ) : (
-                songs
-                  .slice(0, 5)
-                  .map((song, index) => {
+            <div className="ff-home-goal">
+              <div>
+                <strong>
+                  {goals
+                    ?.daily
+                    .completed_minutes ??
+                    0}
+                </strong>
+
+                <span>
+                  /{" "}
+                  {goals
+                    ?.daily
+                    .goal_minutes ??
+                    30}{" "}
+                  MIN
+                </span>
+              </div>
+
+              <ProgressBar
+                value={
+                  goals
+                    ?.daily
+                    .progress_percent ??
+                  0
+                }
+              />
+
+              <p>
+                {goals?.daily
+                  .completed
+                  ? "Daily goal complete."
+                  : `${goals?.daily.remaining_minutes ?? 30} minutes left today.`}
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/today"
+              className="ff-button ff-button-primary ff-home-plan-button"
+            >
+              Build today&apos;s plan
+            </Link>
+          </article>
+
+          <article className="ff-panel">
+            <div className="ff-panel-header">
+              <div>
+                <h2>
+                  Needs attention
+                </h2>
+
+                <p>
+                  Songs furthest from
+                  their target speed.
+                </p>
+              </div>
+
+              <Link
+                href="/dashboard/songs"
+                className="ff-panel-link"
+              >
+                All songs →
+              </Link>
+            </div>
+
+            {focusSongs.length >
+            0 ? (
+              <div className="ff-focus-list">
+                {focusSongs.map(
+                  (
+                    song
+                  ) => {
                     const progress =
-                      Math.min(
-                        100,
-                        Math.round(
-                          (song.current_bpm /
-                            song.target_bpm) *
-                            100
-                        )
+                      calculateProgress(
+                        song.current_bpm,
+                        song.target_bpm
                       );
 
                     return (
                       <article
-                        className="studio-setlist-row"
-                        key={song.id}
+                        key={
+                          song.id
+                        }
                       >
-                        <span className="studio-track-number">
-                          {String(
-                            index + 1
-                          ).padStart(2, "0")}
-                        </span>
-
-                        <div className="studio-track-info">
+                        <div className="ff-focus-song">
                           <strong>
-                            {song.title}
+                            {
+                              song.title
+                            }
                           </strong>
 
-                          <span>
-                            {song.artist}
-                          </span>
+                          <small>
+                            {
+                              song.artist
+                            }
+                          </small>
                         </div>
 
-                        <div className="studio-track-bpm">
+                        <div className="ff-focus-bpm">
                           <strong>
-                            {song.current_bpm}
+                            {
+                              song.current_bpm
+                            }
                           </strong>
 
-                          <span>
-                            /{" "}
-                            {song.target_bpm} BPM
-                          </span>
+                          <small>
+                            →{" "}
+                            {
+                              song.target_bpm
+                            }{" "}
+                            BPM
+                          </small>
                         </div>
 
-                        <div className="studio-inline-meter">
-                          <span
-                            style={{
-                              width: `${progress}%`,
-                            }}
-                          />
-                        </div>
+                        <ProgressBar
+                          value={
+                            progress
+                          }
+                          showValue={
+                            false
+                          }
+                        />
                       </article>
                     );
-                  })
-              )}
-            </div>
-          </div>
-
-          <aside className="studio-now-panel">
-            <p className="studio-kicker">
-              LAST SESSION
-            </p>
-
-            {latestSession ? (
-              <>
-                <div className="studio-waveform">
-                  {Array.from({
-                    length: 24,
-                  }).map((_, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        height: `${
-                          20 +
-                          ((index * 17) % 65)
-                        }%`,
-                      }}
-                    />
-                  ))}
-                </div>
-
-                <h2>
-                  {latestSession.focus}
-                </h2>
-
-                <div className="studio-session-time">
-                  <strong>
-                    {
-                      latestSession.duration_minutes
-                    }
-                  </strong>
-
-                  <span>MINUTES</span>
-                </div>
-
-                <p>
-                  {new Date(
-                    latestSession.started_at
-                  ).toLocaleDateString()}
-                </p>
-              </>
+                  }
+                )}
+              </div>
             ) : (
-              <>
-                <div className="studio-waveform studio-waveform-muted">
-                  {Array.from({
-                    length: 24,
-                  }).map((_, index) => (
-                    <span
-                      key={index}
-                      style={{
-                        height: `${
-                          15 +
-                          ((index * 11) % 35)
-                        }%`,
-                      }}
-                    />
-                  ))}
-                </div>
+              <div className="ff-empty">
+                Add a song to get
+                started.
+              </div>
+            )}
+          </article>
+        </section>
 
+        <section className="ff-grid ff-grid-2">
+          <article className="ff-panel">
+            <div className="ff-panel-header">
+              <div>
                 <h2>
-                  No sessions yet.
+                  Recent practice
                 </h2>
 
                 <p>
-                  Start playing and your
-                  latest session will appear
-                  here.
+                  Your latest
+                  sessions.
                 </p>
-              </>
-            )}
+              </div>
 
-            <a
-              href="/dashboard/practice"
-              className="studio-big-link"
-            >
-              Enter practice mode
-              <span>↗</span>
-            </a>
-          </aside>
+              <Link
+                href="/dashboard/practice"
+                className="ff-panel-link"
+              >
+                History →
+              </Link>
+            </div>
+
+            {recentSessions.length >
+            0 ? (
+              <div className="ff-recent-list">
+                {recentSessions.map(
+                  (
+                    session
+                  ) => (
+                    <article
+                      key={
+                        session.id
+                      }
+                    >
+                      <div>
+                        <strong>
+                          {
+                            session.focus
+                          }
+                        </strong>
+
+                        <small>
+                          {new Date(
+                            session.started_at
+                          ).toLocaleDateString()}
+                        </small>
+                      </div>
+
+                      <strong>
+                        {
+                          session.duration_minutes
+                        }{" "}
+                        MIN
+                      </strong>
+                    </article>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="ff-empty">
+                No practice
+                sessions yet.
+              </div>
+            )}
+          </article>
+
+          <article className="ff-panel">
+            <div className="ff-panel-header">
+              <div>
+                <h2>
+                  Library
+                </h2>
+
+                <p>
+                  Everything you&apos;re
+                  working on.
+                </p>
+              </div>
+            </div>
+
+            <div className="ff-library-links">
+              <Link
+                href="/dashboard/songs"
+                className="ff-library-card"
+              >
+                <span>
+                  Songs
+                </span>
+
+                <strong>
+                  {
+                    songs.length
+                  }
+                </strong>
+
+                <small>
+                  {
+                    mastered
+                  }{" "}
+                  mastered
+                </small>
+              </Link>
+
+              <Link
+                href="/dashboard/exercises"
+                className="ff-library-card"
+              >
+                <span>
+                  Drills
+                </span>
+
+                <strong>
+                  {
+                    exercises.length
+                  }
+                </strong>
+
+                <small>
+                  Technique &
+                  warm-ups
+                </small>
+              </Link>
+            </div>
+          </article>
         </section>
       </main>
     </div>

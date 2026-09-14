@@ -8,9 +8,7 @@ import {
   useState,
 } from "react";
 
-import {
-  useSearchParams,
-} from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import {
   Exercise,
@@ -25,26 +23,26 @@ import {
 } from "../../../lib/api";
 
 import Sidebar from "../components/Sidebar";
-
+import PageHeader from "../components/PageHeader";
 
 type PracticeTargetType =
   | "song"
   | "exercise"
   | "custom";
 
-
 type PracticeSummary = {
   focus: string;
   durationMinutes: number;
   bpm: number;
   notes: string;
+
   entityType:
     | "song"
     | "exercise"
     | "custom";
+
   entityId: number | null;
 };
-
 
 export default function PracticeClient() {
   const searchParams =
@@ -53,16 +51,37 @@ export default function PracticeClient() {
   const initializedFromUrl =
     useRef(false);
 
-  const [sessions, setSessions] =
-    useState<PracticeSession[]>([]);
+  const audioContextRef =
+    useRef<AudioContext | null>(
+      null
+    );
 
-  const [songs, setSongs] =
+  const metronomeIntervalRef =
+    useRef<number | null>(
+      null
+    );
+
+  const [
+    sessions,
+    setSessions,
+  ] =
+    useState<
+      PracticeSession[]
+    >([]);
+
+  const [
+    songs,
+    setSongs,
+  ] =
     useState<Song[]>([]);
 
   const [
     exercises,
     setExercises,
-  ] = useState<Exercise[]>([]);
+  ] =
+    useState<
+      Exercise[]
+    >([]);
 
   const [
     targetType,
@@ -75,68 +94,108 @@ export default function PracticeClient() {
   const [
     selectedTarget,
     setSelectedTarget,
-  ] = useState("");
-
-  const [focus, setFocus] =
+  ] =
     useState("");
 
-  const [notes, setNotes] =
+  const [
+    focus,
+    setFocus,
+  ] =
     useState("");
 
-  const [minutes, setMinutes] =
-    useState(30);
+  const [
+    notes,
+    setNotes,
+  ] =
+    useState("");
 
   const [
     practiceBpm,
     setPracticeBpm,
-  ] = useState(80);
+  ] =
+    useState(80);
 
   const [
     timerSeconds,
     setTimerSeconds,
-  ] = useState(0);
+  ] =
+    useState(0);
 
   const [
     timerRunning,
     setTimerRunning,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     metronomeRunning,
     setMetronomeRunning,
-  ] = useState(false);
-
-  const [summary, setSummary] =
-    useState<PracticeSummary | null>(
-      null
-    );
-
-  const [saving, setSaving] =
+  ] =
     useState(false);
+
+  const [
+    summary,
+    setSummary,
+  ] =
+    useState<
+      PracticeSummary | null
+    >(null);
 
   const [
     updateProgress,
     setUpdateProgress,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
-    saveMessage,
-    setSaveMessage,
-  ] = useState("");
+    saving,
+    setSaving,
+  ] =
+    useState(false);
 
-  const [error, setError] =
+  const [
+    message,
+    setMessage,
+  ] =
     useState("");
 
-  const audioContextRef =
-    useRef<AudioContext | null>(
-      null
-    );
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
-  const metronomeIntervalRef =
-    useRef<number | null>(
-      null
-    );
+  const [
+    quickFocus,
+    setQuickFocus,
+  ] =
+    useState("");
 
+  const [
+    quickMinutes,
+    setQuickMinutes,
+  ] =
+    useState(30);
+
+  const [
+    songQuery,
+    setSongQuery,
+  ] =
+    useState("");
+
+  const [
+    drillQuery,
+    setDrillQuery,
+  ] =
+    useState("");
+
+  const [
+    pendingDelete,
+    setPendingDelete,
+  ] =
+    useState<
+      PracticeSession | null
+    >(null);
 
   async function loadData() {
     try {
@@ -144,11 +203,12 @@ export default function PracticeClient() {
         sessionData,
         songData,
         exerciseData,
-      ] = await Promise.all([
-        getPracticeSessions(),
-        getSongs(),
-        getExercises(),
-      ]);
+      ] =
+        await Promise.all([
+          getPracticeSessions(),
+          getSongs(),
+          getExercises(),
+        ]);
 
       setSessions(
         sessionData
@@ -163,16 +223,14 @@ export default function PracticeClient() {
       );
     } catch {
       setError(
-        "Could not load your practice data."
+        "Could not load practice data."
       );
     }
   }
 
-
   useEffect(() => {
     loadData();
   }, []);
-
 
   useEffect(() => {
     if (
@@ -201,9 +259,9 @@ export default function PracticeClient() {
         "focus"
       );
 
-
     if (
-      type === "custom"
+      type ===
+      "custom"
     ) {
       setTargetType(
         "custom"
@@ -230,15 +288,18 @@ export default function PracticeClient() {
       return;
     }
 
-
     if (
-      type === "song" &&
+      type ===
+        "song" &&
       id &&
-      songs.length > 0
+      songs.length >
+        0
     ) {
       const song =
         songs.find(
-          (item) =>
+          (
+            item
+          ) =>
             item.id ===
             Number(id)
         );
@@ -258,6 +319,10 @@ export default function PracticeClient() {
           `${song.title} — ${song.artist}`
         );
 
+        setSongQuery(
+          song.title
+        );
+
         setPracticeBpm(
           bpm
             ? Number(bpm)
@@ -269,21 +334,25 @@ export default function PracticeClient() {
       }
     }
 
-
     if (
-      type === "exercise" &&
+      type ===
+        "exercise" &&
       id &&
       exercises.length >
         0
     ) {
       const exercise =
         exercises.find(
-          (item) =>
+          (
+            item
+          ) =>
             item.id ===
             Number(id)
         );
 
-      if (exercise) {
+      if (
+        exercise
+      ) {
         setTargetType(
           "exercise"
         );
@@ -295,6 +364,10 @@ export default function PracticeClient() {
         );
 
         setFocus(
+          exercise.name
+        );
+
+        setDrillQuery(
           exercise.name
         );
 
@@ -314,9 +387,10 @@ export default function PracticeClient() {
     exercises,
   ]);
 
-
   useEffect(() => {
-    if (!timerRunning) {
+    if (
+      !timerRunning
+    ) {
       return;
     }
 
@@ -324,8 +398,11 @@ export default function PracticeClient() {
       window.setInterval(
         () => {
           setTimerSeconds(
-            (current) =>
-              current + 1
+            (
+              current
+            ) =>
+              current +
+              1
           );
         },
         1000
@@ -336,44 +413,45 @@ export default function PracticeClient() {
         interval
       );
     };
-  }, [timerRunning]);
-
+  }, [
+    timerRunning,
+  ]);
 
   useEffect(() => {
     if (
       !metronomeRunning
     ) {
-      stopMetronomeInterval();
+      stopMetronome();
+
       return;
     }
 
-    startMetronomeInterval();
+    startMetronome();
 
     return () => {
-      stopMetronomeInterval();
+      stopMetronome();
     };
   }, [
     metronomeRunning,
     practiceBpm,
   ]);
 
-
   useEffect(() => {
     return () => {
-      stopMetronomeInterval();
+      stopMetronome();
 
       if (
         audioContextRef.current &&
         audioContextRef.current
-          .state !== "closed"
+          .state !==
+          "closed"
       ) {
         audioContextRef.current.close();
       }
     };
   }, []);
 
-
-  function stopMetronomeInterval() {
+  function stopMetronome() {
     if (
       metronomeIntervalRef.current !==
       null
@@ -387,15 +465,7 @@ export default function PracticeClient() {
     }
   }
 
-
   function playClick() {
-    if (
-      typeof window ===
-      "undefined"
-    ) {
-      return;
-    }
-
     if (
       !audioContextRef.current
     ) {
@@ -419,7 +489,7 @@ export default function PracticeClient() {
       950;
 
     gain.gain.setValueAtTime(
-      0.14,
+      0.13,
       context.currentTime
     );
 
@@ -445,22 +515,21 @@ export default function PracticeClient() {
     );
   }
 
-
-  function startMetronomeInterval() {
-    stopMetronomeInterval();
+  function startMetronome() {
+    stopMetronome();
 
     playClick();
 
-    const intervalMs =
-      60000 / practiceBpm;
+    const interval =
+      60000 /
+      practiceBpm;
 
     metronomeIntervalRef.current =
       window.setInterval(
         playClick,
-        intervalMs
+        interval
       );
   }
-
 
   async function toggleMetronome() {
     if (
@@ -479,91 +548,16 @@ export default function PracticeClient() {
     }
 
     setMetronomeRunning(
-      (current) =>
-        !current
+      (
+        value
+      ) =>
+        !value
     );
   }
 
-
-  function changeBpm(
-    amount: number
-  ) {
-    setPracticeBpm(
-      (current) =>
-        Math.min(
-          300,
-          Math.max(
-            20,
-            current +
-              amount
-          )
-        )
-    );
-  }
-
-
-  function selectSong(
-    songId: string
-  ) {
-    setSelectedTarget(
-      songId
-    );
-
-    const song =
-      songs.find(
-        (item) =>
-          item.id ===
-          Number(
-            songId
-          )
-      );
-
-    if (!song) {
-      return;
-    }
-
-    setFocus(
-      `${song.title} — ${song.artist}`
-    );
-
-    setPracticeBpm(
-      song.current_bpm
-    );
-  }
-
-
-  function selectExercise(
-    exerciseId: string
-  ) {
-    setSelectedTarget(
-      exerciseId
-    );
-
-    const exercise =
-      exercises.find(
-        (item) =>
-          item.id ===
-          Number(
-            exerciseId
-          )
-      );
-
-    if (!exercise) {
-      return;
-    }
-
-    setFocus(
-      exercise.name
-    );
-
-    setPracticeBpm(
-      exercise.current_bpm
-    );
-  }
-
-
-  function changeTargetType(
-    type: PracticeTargetType
+  function setType(
+    type:
+      PracticeTargetType
   ) {
     setTargetType(
       type
@@ -577,7 +571,11 @@ export default function PracticeClient() {
       ""
     );
 
-    setSaveMessage(
+    setMessage(
+      ""
+    );
+
+    setError(
       ""
     );
 
@@ -585,7 +583,8 @@ export default function PracticeClient() {
       true;
 
     if (
-      type === "custom"
+      type ===
+      "custom"
     ) {
       setPracticeBpm(
         80
@@ -593,6 +592,158 @@ export default function PracticeClient() {
     }
   }
 
+  function chooseSong(
+    song: Song
+  ) {
+    setSelectedTarget(
+      String(
+        song.id
+      )
+    );
+
+    setSongQuery(
+      song.title
+    );
+
+    setFocus(
+      `${song.title} — ${song.artist}`
+    );
+
+    setPracticeBpm(
+      song.current_bpm
+    );
+
+    setError(
+      ""
+    );
+  }
+
+  function chooseExercise(
+    exercise:
+      Exercise
+  ) {
+    setSelectedTarget(
+      String(
+        exercise.id
+      )
+    );
+
+    setDrillQuery(
+      exercise.name
+    );
+
+    setFocus(
+      exercise.name
+    );
+
+    setPracticeBpm(
+      exercise.current_bpm
+    );
+
+    setError(
+      ""
+    );
+  }
+
+  function changeBpm(
+    amount: number
+  ) {
+    setPracticeBpm(
+      (
+        current
+      ) =>
+        Math.min(
+          300,
+          Math.max(
+            20,
+            current +
+              amount
+          )
+        )
+    );
+  }
+
+  const filteredSongs =
+    useMemo(() => {
+      const query =
+        songQuery
+          .trim()
+          .toLowerCase();
+
+      if (
+        !query
+      ) {
+        return songs.slice(
+          0,
+          6
+        );
+      }
+
+      return songs
+        .filter(
+          (
+            song
+          ) =>
+            song.title
+              .toLowerCase()
+              .includes(
+                query
+              ) ||
+            song.artist
+              .toLowerCase()
+              .includes(
+                query
+              )
+        )
+        .slice(
+          0,
+          8
+        );
+    }, [
+      songs,
+      songQuery,
+    ]);
+
+  const filteredDrills =
+    useMemo(() => {
+      const query =
+        drillQuery
+          .trim()
+          .toLowerCase();
+
+      if (
+        !query
+      ) {
+        return exercises.slice(
+          0,
+          6
+        );
+      }
+
+      return exercises
+        .filter(
+          (
+            exercise
+          ) =>
+            exercise.name
+              .toLowerCase()
+              .includes(
+                query
+              ) ||
+            exercise.category
+              .toLowerCase()
+              .includes(
+                query
+              )
+        )
+        .slice(
+          0,
+          8
+        );
+    }, [
+      exercises,
+      drillQuery,
+    ]);
 
   const timerDisplay =
     useMemo(() => {
@@ -602,12 +753,13 @@ export default function PracticeClient() {
             3600
         );
 
-      const mins =
+      const minutes =
         Math.floor(
           (
             timerSeconds %
             3600
-          ) / 60
+          ) /
+            60
         );
 
       const seconds =
@@ -616,43 +768,59 @@ export default function PracticeClient() {
 
       return [
         hours,
-        mins,
+        minutes,
         seconds,
       ]
         .map(
-          (value) =>
+          (
             value
-              .toString()
-              .padStart(
-                2,
-                "0"
-              )
+          ) =>
+            String(
+              value
+            ).padStart(
+              2,
+              "0"
+            )
         )
-        .join(":");
+        .join(
+          ":"
+        );
     }, [
       timerSeconds,
     ]);
 
-
-  function prepareFinish() {
+  function toggleTimer() {
     if (
       !focus.trim()
     ) {
       setError(
-        "Choose what you practiced first."
+        "Choose what you want to practice first."
       );
 
       return;
     }
 
+    setError(
+      ""
+    );
+
+    setMessage(
+      ""
+    );
+
+    setTimerRunning(
+      (
+        running
+      ) =>
+        !running
+    );
+  }
+
+  function prepareFinish() {
     if (
       timerSeconds <
       1
     ) {
-      setError(
-        "Start the timer before finishing the session."
-      );
-
       return;
     }
 
@@ -662,14 +830,6 @@ export default function PracticeClient() {
 
     setMetronomeRunning(
       false
-    );
-
-    setError(
-      ""
-    );
-
-    setSaveMessage(
-      ""
     );
 
     setSummary({
@@ -705,9 +865,10 @@ export default function PracticeClient() {
     });
   }
 
-
   async function saveFinishedSession() {
-    if (!summary) {
+    if (
+      !summary
+    ) {
       return;
     }
 
@@ -719,19 +880,15 @@ export default function PracticeClient() {
       ""
     );
 
-    setSaveMessage(
-      ""
-    );
-
     try {
       const result =
         await completePracticeSession(
           {
-            focus:
-              summary.focus,
-
             duration_minutes:
               summary.durationMinutes,
+
+            focus:
+              summary.focus,
 
             notes:
               summary.notes ||
@@ -761,70 +918,28 @@ export default function PracticeClient() {
         result.current_bpm !==
           null
       ) {
-        const difference =
-          result.current_bpm -
-          result.previous_bpm;
-
-        setSaveMessage(
-          difference > 0
-            ? `Progress saved: ${result.previous_bpm} → ${result.current_bpm} BPM (+${difference}).`
-            : difference < 0
-              ? `Session saved at ${result.current_bpm} BPM.`
-              : "Session saved."
+        setMessage(
+          `Session saved. ${result.previous_bpm} → ${result.current_bpm} BPM.`
         );
       } else {
-        setSaveMessage(
+        setMessage(
           "Session saved."
         );
       }
 
-      setTimerRunning(
-        false
-      );
-
-      setMetronomeRunning(
-        false
-      );
-
       setTimerSeconds(
         0
-      );
-
-      setSummary(
-        null
       );
 
       setNotes(
         ""
       );
 
+      setSummary(
+        null
+      );
+
       await loadData();
-
-      if (
-        summary.entityType ===
-          "song" &&
-        summary.entityId !==
-          null
-      ) {
-        setSelectedTarget(
-          String(
-            summary.entityId
-          )
-        );
-      }
-
-      if (
-        summary.entityType ===
-          "exercise" &&
-        summary.entityId !==
-          null
-      ) {
-        setSelectedTarget(
-          String(
-            summary.entityId
-          )
-        );
-      }
     } catch (
       error
     ) {
@@ -832,7 +947,7 @@ export default function PracticeClient() {
         error instanceof
           Error
           ? error.message
-          : "Could not save the practice session."
+          : "Could not save session."
       );
     } finally {
       setSaving(
@@ -841,8 +956,7 @@ export default function PracticeClient() {
     }
   }
 
-
-  function resetLiveSession() {
+  function resetSession() {
     setTimerRunning(
       false
     );
@@ -855,42 +969,18 @@ export default function PracticeClient() {
       0
     );
 
-    setTargetType(
-      "song"
-    );
-
-    setSelectedTarget(
-      ""
-    );
-
-    setFocus(
-      ""
-    );
-
     setNotes(
       ""
     );
 
-    setPracticeBpm(
-      80
+    setMessage(
+      ""
     );
 
     setSummary(
       null
     );
-
-    setUpdateProgress(
-      true
-    );
-
-    setSaveMessage(
-      ""
-    );
-
-    initializedFromUrl.current =
-      true;
   }
-
 
   async function handleQuickLog(
     event:
@@ -899,133 +989,107 @@ export default function PracticeClient() {
     event.preventDefault();
 
     if (
-      !focus.trim()
+      !quickFocus.trim()
     ) {
       return;
     }
 
-    const bpmNote =
-      `Practice BPM: ${practiceBpm}`;
+    try {
+      await createPracticeSession(
+        {
+          focus:
+            quickFocus.trim(),
 
-    const finalNotes =
-      notes.trim()
-        ? `${bpmNote}\n${notes.trim()}`
-        : bpmNote;
+          duration_minutes:
+            quickMinutes,
 
-    await createPracticeSession(
-      {
-        focus:
-          focus.trim(),
+          notes:
+            null,
+        }
+      );
 
-        duration_minutes:
-          minutes,
+      setQuickFocus(
+        ""
+      );
 
-        notes:
-          finalNotes,
-      }
-    );
+      setQuickMinutes(
+        30
+      );
 
-    setFocus(
-      ""
-    );
+      setMessage(
+        "Session logged."
+      );
 
-    setNotes(
-      ""
-    );
-
-    setMinutes(
-      30
-    );
-
-    await loadData();
+      await loadData();
+    } catch {
+      setError(
+        "Could not log session."
+      );
+    }
   }
 
-
-  async function handleDelete(
+  function removeSession(
     session:
       PracticeSession
   ) {
+    setPendingDelete(
+      session
+    );
+  }
+
+  async function confirmDeleteSession() {
     if (
-      !window.confirm(
-        `Remove "${session.focus}" from your practice history?`
-      )
+      !pendingDelete
     ) {
       return;
     }
 
-    await deletePracticeSession(
-      session.id
-    );
+    try {
+      await deletePracticeSession(
+        pendingDelete.id
+      );
 
-    await loadData();
+      setPendingDelete(
+        null
+      );
+
+      await loadData();
+    } catch {
+      setError(
+        "Could not remove the practice session."
+      );
+    }
   }
 
-
-  const totalMinutes =
-    sessions.reduce(
-      (
-        total,
-        session
-      ) =>
-        total +
-        session.duration_minutes,
-      0
-    );
-
-
   return (
-    <div className="studio-app">
+    <div>
       <Sidebar />
 
-      <main className="practice-stage">
-        <section className="practice-live">
-          <div className="practice-live-header">
-            <div>
-              <p className="studio-kicker">
-                LIVE ROOM
-              </p>
+      <main className="ff-page">
+        <PageHeader
+          eyebrow="PRACTICE"
+          title="Practice room"
+          description="Choose one thing, set the tempo, and focus on playing."
+        />
 
-              <span className="practice-live-status">
-                <i
-                  className={
-                    timerRunning
-                      ? "practice-live-light practice-live-light-on"
-                      : "practice-live-light"
-                  }
-                />
-
-                {timerRunning
-                  ? "SESSION ACTIVE"
-                  : "READY"}
-              </span>
-            </div>
-
-            <p>
-              Tune everything
-              else out.
-              <br />
-              Work on one thing
-              at a time.
-            </p>
-          </div>
-
-          <div className="practice-target-picker">
-            <div className="practice-target-tabs">
+        <section className="ff-room-layout">
+          <article className="ff-panel ff-room-main">
+            <div className="ff-practice-type-tabs">
               <button
                 type="button"
                 className={
                   targetType ===
                   "song"
-                    ? "practice-target-tab practice-target-tab-active"
-                    : "practice-target-tab"
+                    ? "ff-practice-tab ff-practice-tab-active"
+                    : "ff-practice-tab"
                 }
                 onClick={() =>
-                  changeTargetType(
+                  setType(
                     "song"
                   )
                 }
               >
-                SONG
+                Song
               </button>
 
               <button
@@ -1033,16 +1097,16 @@ export default function PracticeClient() {
                 className={
                   targetType ===
                   "exercise"
-                    ? "practice-target-tab practice-target-tab-active"
-                    : "practice-target-tab"
+                    ? "ff-practice-tab ff-practice-tab-active"
+                    : "ff-practice-tab"
                 }
                 onClick={() =>
-                  changeTargetType(
+                  setType(
                     "exercise"
                   )
                 }
               >
-                DRILL
+                Drill
               </button>
 
               <button
@@ -1050,109 +1114,204 @@ export default function PracticeClient() {
                 className={
                   targetType ===
                   "custom"
-                    ? "practice-target-tab practice-target-tab-active"
-                    : "practice-target-tab"
+                    ? "ff-practice-tab ff-practice-tab-active"
+                    : "ff-practice-tab"
                 }
                 onClick={() =>
-                  changeTargetType(
+                  setType(
                     "custom"
                   )
                 }
               >
-                CUSTOM
+                Custom
               </button>
             </div>
 
             {targetType ===
               "song" && (
-              <select
-                value={
-                  selectedTarget
-                }
-                onChange={(
-                  event
-                ) =>
-                  selectSong(
+              <div className="ff-library-picker">
+                <input
+                  className="ff-input"
+                  value={
+                    songQuery
+                  }
+                  onChange={(
                     event
-                      .target
-                      .value
-                  )
-                }
-              >
-                <option value="">
-                  Select a song
-                </option>
+                  ) => {
+                    setSongQuery(
+                      event
+                        .target
+                        .value
+                    );
 
-                {songs.map(
-                  (
-                    song
-                  ) => (
-                    <option
-                      key={
-                        song.id
-                      }
-                      value={
-                        song.id
-                      }
-                    >
-                      {song.title}
-                      {" — "}
-                      {song.artist}
-                    </option>
-                  )
-                )}
-              </select>
+                    if (
+                      selectedTarget
+                    ) {
+                      setSelectedTarget(
+                        ""
+                      );
+
+                      setFocus(
+                        ""
+                      );
+                    }
+                  }}
+                  placeholder="Search your saved songs..."
+                />
+
+                <div className="ff-picker-results">
+                  {filteredSongs.map(
+                    (
+                      song
+                    ) => (
+                      <button
+                        type="button"
+                        key={
+                          song.id
+                        }
+                        className={
+                          selectedTarget ===
+                          String(
+                            song.id
+                          )
+                            ? "ff-picker-result ff-picker-result-active"
+                            : "ff-picker-result"
+                        }
+                        onClick={() =>
+                          chooseSong(
+                            song
+                          )
+                        }
+                      >
+                        <span>
+                          <strong>
+                            {
+                              song.title
+                            }
+                          </strong>
+
+                          <small>
+                            {
+                              song.artist
+                            }
+                          </small>
+                        </span>
+
+                        <span>
+                          {
+                            song.current_bpm
+                          }{" "}
+                          BPM
+                        </span>
+                      </button>
+                    )
+                  )}
+
+                  {filteredSongs.length ===
+                    0 && (
+                    <div className="ff-picker-empty">
+                      No saved songs
+                      match.
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {targetType ===
               "exercise" && (
-              <select
-                value={
-                  selectedTarget
-                }
-                onChange={(
-                  event
-                ) =>
-                  selectExercise(
+              <div className="ff-library-picker">
+                <input
+                  className="ff-input"
+                  value={
+                    drillQuery
+                  }
+                  onChange={(
                     event
-                      .target
-                      .value
-                  )
-                }
-              >
-                <option value="">
-                  Select a
-                  drill
-                </option>
+                  ) => {
+                    setDrillQuery(
+                      event
+                        .target
+                        .value
+                    );
 
-                {exercises.map(
-                  (
-                    exercise
-                  ) => (
-                    <option
-                      key={
-                        exercise.id
-                      }
-                      value={
-                        exercise.id
-                      }
-                    >
-                      {
-                        exercise.name
-                      }
-                      {" — "}
-                      {
-                        exercise.category
-                      }
-                    </option>
-                  )
-                )}
-              </select>
+                    if (
+                      selectedTarget
+                    ) {
+                      setSelectedTarget(
+                        ""
+                      );
+
+                      setFocus(
+                        ""
+                      );
+                    }
+                  }}
+                  placeholder="Search your drills..."
+                />
+
+                <div className="ff-picker-results">
+                  {filteredDrills.map(
+                    (
+                      exercise
+                    ) => (
+                      <button
+                        type="button"
+                        key={
+                          exercise.id
+                        }
+                        className={
+                          selectedTarget ===
+                          String(
+                            exercise.id
+                          )
+                            ? "ff-picker-result ff-picker-result-active"
+                            : "ff-picker-result"
+                        }
+                        onClick={() =>
+                          chooseExercise(
+                            exercise
+                          )
+                        }
+                      >
+                        <span>
+                          <strong>
+                            {
+                              exercise.name
+                            }
+                          </strong>
+
+                          <small>
+                            {
+                              exercise.category
+                            }
+                          </small>
+                        </span>
+
+                        <span>
+                          {
+                            exercise.current_bpm
+                          }{" "}
+                          BPM
+                        </span>
+                      </button>
+                    )
+                  )}
+
+                  {filteredDrills.length ===
+                    0 && (
+                    <div className="ff-picker-empty">
+                      No drills match.
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
 
             {targetType ===
               "custom" && (
               <input
+                className="ff-input"
                 value={
                   focus
                 }
@@ -1168,94 +1327,82 @@ export default function PracticeClient() {
                 placeholder="What are you working on?"
               />
             )}
-          </div>
 
-          <div className="practice-clock">
-            {
-              timerDisplay
-            }
-          </div>
-
-          <div className="practice-wave">
-            {Array.from({
-              length: 48,
-            }).map(
-              (
-                _,
-                index
-              ) => (
-                <span
-                  key={
-                    index
-                  }
-                  className={
-                    timerRunning
-                      ? "practice-wave-active"
-                      : ""
-                  }
-                  style={{
-                    height: `${
-                      12 +
-                      ((index *
-                        23) %
-                        75)
-                    }%`,
-                  }}
-                />
-              )
-            )}
-          </div>
-
-          <section className="practice-metronome">
-            <div className="practice-metronome-heading">
-              <div>
-                <p>
-                  METRONOME
-                </p>
+            <div className="ff-room-session">
+              <div className="ff-room-focus">
+                <span>
+                  CURRENT FOCUS
+                </span>
 
                 <strong>
-                  {
-                    practiceBpm
+                  {focus ||
+                    "Choose something to practice"}
+                </strong>
+              </div>
+
+              <div className="ff-room-clock">
+                {
+                  timerDisplay
+                }
+              </div>
+
+              <div className="ff-room-status">
+                <i
+                  className={
+                    timerRunning
+                      ? "ff-live-dot ff-live-dot-active"
+                      : "ff-live-dot"
                   }
+                />
+
+                {timerRunning
+                  ? "Session running"
+                  : timerSeconds >
+                      0
+                    ? "Paused"
+                    : "Ready"}
+              </div>
+
+              <div className="ff-room-tempo">
+                <button
+                  type="button"
+                  className="ff-button"
+                  onClick={() =>
+                    changeBpm(
+                      -5
+                    )
+                  }
+                >
+                  −5
+                </button>
+
+                <div>
+                  <strong>
+                    {
+                      practiceBpm
+                    }
+                  </strong>
 
                   <span>
                     BPM
                   </span>
-                </strong>
+                </div>
+
+                <button
+                  type="button"
+                  className="ff-button"
+                  onClick={() =>
+                    changeBpm(
+                      5
+                    )
+                  }
+                >
+                  +5
+                </button>
               </div>
 
-              <button
-                type="button"
-                className={
-                  metronomeRunning
-                    ? "practice-metronome-toggle practice-metronome-toggle-on"
-                    : "practice-metronome-toggle"
-                }
-                onClick={
-                  toggleMetronome
-                }
-              >
-                <span />
-
-                {metronomeRunning
-                  ? "ON"
-                  : "OFF"}
-              </button>
-            </div>
-
-            <div className="practice-bpm-controls">
-              <button
-                type="button"
-                onClick={() =>
-                  changeBpm(
-                    -5
-                  )
-                }
-              >
-                −5
-              </button>
-
               <input
+                className="ff-room-range"
                 type="range"
                 min="20"
                 max="300"
@@ -1277,34 +1424,27 @@ export default function PracticeClient() {
 
               <button
                 type="button"
-                onClick={() =>
-                  changeBpm(
-                    5
-                  )
+                className={
+                  metronomeRunning
+                    ? "ff-metronome-inline ff-metronome-inline-active"
+                    : "ff-metronome-inline"
+                }
+                onClick={
+                  toggleMetronome
                 }
               >
-                +5
+                <span>
+                  ●
+                </span>
+
+                Metronome{" "}
+                {metronomeRunning
+                  ? "On"
+                  : "Off"}
               </button>
-            </div>
-          </section>
-
-          {focus && (
-            <div className="practice-current-focus">
-              <span>
-                CURRENT FOCUS
-              </span>
-
-              <strong>
-                {focus}
-              </strong>
-            </div>
-          )}
-
-          <div className="practice-focus-area practice-focus-area-single">
-            <label>
-              SESSION NOTES
 
               <textarea
+                className="ff-textarea ff-room-notes"
                 value={
                   notes
                 }
@@ -1317,311 +1457,301 @@ export default function PracticeClient() {
                       .value
                   )
                 }
-                placeholder="What felt good? What still needs work?"
+                placeholder="Session notes..."
               />
-            </label>
-          </div>
 
-          {saveMessage && (
-            <p className="practice-save-message">
-              {
-                saveMessage
-              }
-            </p>
-          )}
-
-          {error && (
-            <p className="practice-error">
-              {error}
-            </p>
-          )}
-
-          <div className="practice-transport">
-            <button
-              className="practice-main-control"
-              onClick={() => {
-                if (
-                  !focus.trim()
-                ) {
-                  setError(
-                    "Choose what you want to practice first."
-                  );
-
-                  return;
-                }
-
-                setError(
-                  ""
-                );
-
-                setSaveMessage(
-                  ""
-                );
-
-                setTimerRunning(
-                  (
-                    running
-                  ) =>
-                    !running
-                );
-              }}
-            >
-              <span>
-                {timerRunning
-                  ? "Ⅱ"
-                  : "▶"}
-              </span>
-
-              {timerRunning
-                ? "PAUSE"
-                : timerSeconds >
-                    0
-                  ? "RESUME"
-                  : "START"}
-            </button>
-
-            {timerSeconds >
-              0 && (
-              <>
+              <div className="ff-room-actions">
                 <button
-                  className="practice-finish"
+                  className="ff-button ff-button-primary"
                   onClick={
-                    prepareFinish
+                    toggleTimer
                   }
                 >
-                  FINISH
+                  {timerRunning
+                    ? "Pause"
+                    : timerSeconds >
+                        0
+                      ? "Resume"
+                      : "Start practice"}
                 </button>
 
-                <button
-                  className="practice-reset"
-                  onClick={
-                    resetLiveSession
-                  }
-                >
-                  RESET
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-
-        <section className="practice-lower">
-          <div className="practice-log-panel">
-            <div>
-              <p className="studio-kicker">
-                QUICK LOG
-              </p>
-
-              <h2>
-                Already played?
-              </h2>
-            </div>
-
-            <form
-              onSubmit={
-                handleQuickLog
-              }
-            >
-              <input
-                required
-                value={
-                  focus
-                }
-                onChange={(
-                  event
-                ) =>
-                  setFocus(
-                    event
-                      .target
-                      .value
-                  )
-                }
-                placeholder="Practice focus"
-              />
-
-              <div>
-                <input
-                  type="number"
-                  min="1"
-                  value={
-                    minutes
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setMinutes(
-                      Number(
-                        event
-                          .target
-                          .value
-                      )
-                    )
-                  }
-                />
-
-                <span>
-                  MIN
-                </span>
-              </div>
-
-              <div className="practice-quick-bpm">
-                <input
-                  type="number"
-                  min="20"
-                  max="300"
-                  value={
-                    practiceBpm
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setPracticeBpm(
-                      Number(
-                        event
-                          .target
-                          .value
-                      )
-                    )
-                  }
-                />
-
-                <span>
-                  BPM
-                </span>
-              </div>
-
-              <textarea
-                value={
-                  notes
-                }
-                onChange={(
-                  event
-                ) =>
-                  setNotes(
-                    event
-                      .target
-                      .value
-                  )
-                }
-                placeholder="Notes"
-              />
-
-              <button>
-                LOG SESSION
-              </button>
-            </form>
-          </div>
-
-          <div className="practice-history">
-            <div className="practice-history-heading">
-              <div>
-                <p className="studio-kicker">
-                  SESSION TAPE
-                </p>
-
-                <h2>
-                  Practice history
-                </h2>
-              </div>
-
-              <strong>
-                {Math.floor(
-                  totalMinutes /
-                    60
-                )}
-                h{" "}
-                {totalMinutes %
-                  60}
-                m
-              </strong>
-            </div>
-
-            <div className="practice-history-list">
-              {sessions.map(
-                (
-                  session,
-                  index
-                ) => (
-                  <article
-                    key={
-                      session.id
-                    }
-                  >
-                    <span>
-                      {String(
-                        index +
-                          1
-                      ).padStart(
-                        2,
-                        "0"
-                      )}
-                    </span>
-
-                    <div>
-                      <strong>
-                        {
-                          session.focus
-                        }
-                      </strong>
-
-                      <small>
-                        {new Date(
-                          session.started_at
-                        ).toLocaleDateString()}
-                      </small>
-                    </div>
-
-                    <strong>
-                      {
-                        session.duration_minutes
-                      }{" "}
-                      MIN
-                    </strong>
-
+                {timerSeconds >
+                  0 && (
+                  <>
                     <button
-                      onClick={() =>
-                        handleDelete(
-                          session
-                        )
+                      className="ff-button"
+                      onClick={
+                        prepareFinish
                       }
                     >
-                      ×
+                      Finish
                     </button>
-                  </article>
-                )
+
+                    <button
+                      className="ff-button"
+                      onClick={
+                        resetSession
+                      }
+                    >
+                      Reset
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {message && (
+                <p className="ff-success-message">
+                  {message}
+                </p>
               )}
 
-              {sessions.length ===
-                0 && (
-                <div className="practice-history-empty">
-                  Your sessions
-                  will appear here
-                  after you start
-                  practicing.
-                </div>
+              {error && (
+                <p className="ff-form-error ff-room-error">
+                  {error}
+                </p>
               )}
             </div>
-          </div>
+          </article>
+
+          <aside className="ff-room-side">
+            <article className="ff-panel">
+              <div className="ff-panel-header">
+                <div>
+                  <h2>
+                    Recent sessions
+                  </h2>
+
+                  <p>
+                    Your latest
+                    practice.
+                  </p>
+                </div>
+              </div>
+
+              <div className="ff-session-list">
+                {sessions
+                  .slice(
+                    0,
+                    6
+                  )
+                  .map(
+                    (
+                      session
+                    ) => (
+                      <article
+                        key={
+                          session.id
+                        }
+                      >
+                        <div>
+                          <strong>
+                            {
+                              session.focus
+                            }
+                          </strong>
+
+                          <small>
+                            {new Date(
+                              session.started_at
+                            ).toLocaleDateString()}
+                          </small>
+                        </div>
+
+                        <span>
+                          {
+                            session.duration_minutes
+                          }{" "}
+                          MIN
+                        </span>
+
+                        <button
+                          type="button"
+                          className="ff-icon-button"
+                          onClick={() =>
+                            removeSession(
+                              session
+                            )
+                          }
+                        >
+                          ×
+                        </button>
+                      </article>
+                    )
+                  )}
+
+                {sessions.length ===
+                  0 && (
+                  <div className="ff-empty">
+                    No practice
+                    sessions yet.
+                  </div>
+                )}
+              </div>
+            </article>
+
+            <article className="ff-panel">
+              <div className="ff-panel-header">
+                <div>
+                  <h2>
+                    Quick log
+                  </h2>
+
+                  <p>
+                    Log practice you
+                    already did.
+                  </p>
+                </div>
+              </div>
+
+              <form
+                className="ff-room-quick-log"
+                onSubmit={
+                  handleQuickLog
+                }
+              >
+                <input
+                  className="ff-input"
+                  value={
+                    quickFocus
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setQuickFocus(
+                      event
+                        .target
+                        .value
+                    )
+                  }
+                  placeholder="Practice focus"
+                />
+
+                <div className="ff-quick-duration">
+                  <input
+                    className="ff-input"
+                    type="number"
+                    min="1"
+                    value={
+                      quickMinutes
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setQuickMinutes(
+                        Number(
+                          event
+                            .target
+                            .value
+                        )
+                      )
+                    }
+                  />
+
+                  <span>
+                    MIN
+                  </span>
+                </div>
+
+                <button
+                  className="ff-button"
+                >
+                  Log session
+                </button>
+              </form>
+            </article>
+          </aside>
         </section>
 
-        {summary && (
-          <div className="practice-summary-overlay">
-            <section className="practice-summary">
-              <p className="studio-kicker">
-                SESSION COMPLETE
+        {pendingDelete && (
+          <div
+            className="ff-modal-backdrop"
+            onMouseDown={(
+              event
+            ) => {
+              if (
+                event.target ===
+                event.currentTarget
+              ) {
+                setPendingDelete(
+                  null
+                );
+              }
+            }}
+          >
+            <section className="ff-confirm-modal">
+              <div className="ff-confirm-icon">
+                ×
+              </div>
+
+              <span className="ff-eyebrow">
+                REMOVE SESSION
+              </span>
+
+              <h2>
+                Delete this practice
+                session?
+              </h2>
+
+              <p>
+                <strong>
+                  {
+                    pendingDelete.focus
+                  }
+                </strong>
               </p>
+
+              <p className="ff-confirm-description">
+                This will remove the
+                session from your
+                practice history and
+                progress totals.
+              </p>
+
+              <div className="ff-confirm-actions">
+                <button
+                  type="button"
+                  className="ff-button"
+                  onClick={() =>
+                    setPendingDelete(
+                      null
+                    )
+                  }
+                >
+                  Keep session
+                </button>
+
+                <button
+                  type="button"
+                  className="ff-button ff-button-danger"
+                  onClick={
+                    confirmDeleteSession
+                  }
+                >
+                  Delete session
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+        {summary && (
+          <div className="ff-modal-backdrop">
+            <section className="ff-modal">
+              <span className="ff-eyebrow">
+                SESSION COMPLETE
+              </span>
 
               <h2>
                 Nice work.
               </h2>
 
-              <p className="practice-summary-focus">
+              <p className="ff-modal-focus">
                 {
                   summary.focus
                 }
               </p>
 
-              <div className="practice-summary-stats">
+              <div className="ff-grid ff-grid-2 ff-modal-stats">
                 <div>
                   <span>
                     TIME
@@ -1655,23 +1785,9 @@ export default function PracticeClient() {
                 </div>
               </div>
 
-              {summary.notes && (
-                <div className="practice-summary-notes">
-                  <span>
-                    NOTES
-                  </span>
-
-                  <p>
-                    {
-                      summary.notes
-                    }
-                  </p>
-                </div>
-              )}
-
               {summary.entityType !==
                 "custom" && (
-                <label className="practice-progress-toggle">
+                <label className="ff-progress-checkbox">
                   <input
                     type="checkbox"
                     checked={
@@ -1688,23 +1804,18 @@ export default function PracticeClient() {
                     }
                   />
 
-                  <span>
-                    Use{" "}
-                    <strong>
-                      {
-                        summary.bpm
-                      }{" "}
-                      BPM
-                    </strong>{" "}
-                    as my new
-                    current speed
-                  </span>
+                  Use{" "}
+                  {
+                    summary.bpm
+                  }{" "}
+                  BPM as my new
+                  current speed
                 </label>
               )}
 
-              <div className="practice-summary-actions">
+              <div className="ff-modal-actions">
                 <button
-                  className="practice-summary-save"
+                  className="ff-button ff-button-primary"
                   onClick={
                     saveFinishedSession
                   }
@@ -1713,22 +1824,19 @@ export default function PracticeClient() {
                   }
                 >
                   {saving
-                    ? "SAVING..."
-                    : "SAVE SESSION"}
+                    ? "Saving..."
+                    : "Save session"}
                 </button>
 
                 <button
-                  className="practice-summary-cancel"
+                  className="ff-button"
                   onClick={() =>
                     setSummary(
                       null
                     )
                   }
-                  disabled={
-                    saving
-                  }
                 >
-                  KEEP PRACTICING
+                  Keep practicing
                 </button>
               </div>
             </section>
