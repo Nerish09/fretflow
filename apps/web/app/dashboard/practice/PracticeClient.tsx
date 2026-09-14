@@ -119,8 +119,10 @@ export default function PracticeClient() {
     setUpdateProgress,
   ] = useState(true);
 
-  const [saveMessage, setSaveMessage] =
-    useState("");
+  const [
+    saveMessage,
+    setSaveMessage,
+  ] = useState("");
 
   const [error, setError] =
     useState("");
@@ -148,8 +150,14 @@ export default function PracticeClient() {
         getExercises(),
       ]);
 
-      setSessions(sessionData);
-      setSongs(songData);
+      setSessions(
+        sessionData
+      );
+
+      setSongs(
+        songData
+      );
+
       setExercises(
         exerciseData
       );
@@ -174,13 +182,54 @@ export default function PracticeClient() {
     }
 
     const type =
-      searchParams.get("type");
+      searchParams.get(
+        "type"
+      );
 
     const id =
-      searchParams.get("id");
+      searchParams.get(
+        "id"
+      );
 
     const bpm =
-      searchParams.get("bpm");
+      searchParams.get(
+        "bpm"
+      );
+
+    const focusParam =
+      searchParams.get(
+        "focus"
+      );
+
+
+    if (
+      type === "custom"
+    ) {
+      setTargetType(
+        "custom"
+      );
+
+      setSelectedTarget(
+        ""
+      );
+
+      setFocus(
+        focusParam ||
+          "Warm up"
+      );
+
+      setPracticeBpm(
+        bpm
+          ? Number(bpm)
+          : 80
+      );
+
+      initializedFromUrl.current =
+        true;
+
+      return;
+    }
+
 
     if (
       type === "song" &&
@@ -195,10 +244,14 @@ export default function PracticeClient() {
         );
 
       if (song) {
-        setTargetType("song");
+        setTargetType(
+          "song"
+        );
 
         setSelectedTarget(
-          String(song.id)
+          String(
+            song.id
+          )
         );
 
         setFocus(
@@ -216,10 +269,12 @@ export default function PracticeClient() {
       }
     }
 
+
     if (
       type === "exercise" &&
       id &&
-      exercises.length > 0
+      exercises.length >
+        0
     ) {
       const exercise =
         exercises.find(
@@ -285,7 +340,9 @@ export default function PracticeClient() {
 
 
   useEffect(() => {
-    if (!metronomeRunning) {
+    if (
+      !metronomeRunning
+    ) {
       stopMetronomeInterval();
       return;
     }
@@ -333,7 +390,8 @@ export default function PracticeClient() {
 
   function playClick() {
     if (
-      typeof window === "undefined"
+      typeof window ===
+      "undefined"
     ) {
       return;
     }
@@ -414,13 +472,15 @@ export default function PracticeClient() {
 
     if (
       audioContextRef.current
-        .state === "suspended"
+        .state ===
+      "suspended"
     ) {
       await audioContextRef.current.resume();
     }
 
     setMetronomeRunning(
-      (current) => !current
+      (current) =>
+        !current
     );
   }
 
@@ -434,7 +494,8 @@ export default function PracticeClient() {
           300,
           Math.max(
             20,
-            current + amount
+            current +
+              amount
           )
         )
     );
@@ -452,7 +513,9 @@ export default function PracticeClient() {
       songs.find(
         (item) =>
           item.id ===
-          Number(songId)
+          Number(
+            songId
+          )
       );
 
     if (!song) {
@@ -502,16 +565,31 @@ export default function PracticeClient() {
   function changeTargetType(
     type: PracticeTargetType
   ) {
-    setTargetType(type);
-    setSelectedTarget("");
-    setFocus("");
-    setSaveMessage("");
+    setTargetType(
+      type
+    );
+
+    setSelectedTarget(
+      ""
+    );
+
+    setFocus(
+      ""
+    );
+
+    setSaveMessage(
+      ""
+    );
 
     initializedFromUrl.current =
       true;
 
-    if (type === "custom") {
-      setPracticeBpm(80);
+    if (
+      type === "custom"
+    ) {
+      setPracticeBpm(
+        80
+      );
     }
   }
 
@@ -526,30 +604,40 @@ export default function PracticeClient() {
 
       const mins =
         Math.floor(
-          (timerSeconds %
-            3600) /
-            60
+          (
+            timerSeconds %
+            3600
+          ) / 60
         );
 
       const seconds =
-        timerSeconds % 60;
+        timerSeconds %
+        60;
 
       return [
         hours,
         mins,
         seconds,
       ]
-        .map((value) =>
-          value
-            .toString()
-            .padStart(2, "0")
+        .map(
+          (value) =>
+            value
+              .toString()
+              .padStart(
+                2,
+                "0"
+              )
         )
         .join(":");
-    }, [timerSeconds]);
+    }, [
+      timerSeconds,
+    ]);
 
 
   function prepareFinish() {
-    if (!focus.trim()) {
+    if (
+      !focus.trim()
+    ) {
       setError(
         "Choose what you practiced first."
       );
@@ -558,7 +646,8 @@ export default function PracticeClient() {
     }
 
     if (
-      timerSeconds < 1
+      timerSeconds <
+      1
     ) {
       setError(
         "Start the timer before finishing the session."
@@ -567,10 +656,21 @@ export default function PracticeClient() {
       return;
     }
 
-    setTimerRunning(false);
-    setMetronomeRunning(false);
-    setError("");
-    setSaveMessage("");
+    setTimerRunning(
+      false
+    );
+
+    setMetronomeRunning(
+      false
+    );
+
+    setError(
+      ""
+    );
+
+    setSaveMessage(
+      ""
+    );
 
     setSummary({
       focus:
@@ -585,7 +685,8 @@ export default function PracticeClient() {
           )
         ),
 
-      bpm: practiceBpm,
+      bpm:
+        practiceBpm,
 
       notes:
         notes.trim(),
@@ -610,9 +711,17 @@ export default function PracticeClient() {
       return;
     }
 
-    setSaving(true);
-    setError("");
-    setSaveMessage("");
+    setSaving(
+      true
+    );
+
+    setError(
+      ""
+    );
+
+    setSaveMessage(
+      ""
+    );
 
     try {
       const result =
@@ -647,8 +756,10 @@ export default function PracticeClient() {
 
       if (
         result.progress_updated &&
-        result.previous_bpm !== null &&
-        result.current_bpm !== null
+        result.previous_bpm !==
+          null &&
+        result.current_bpm !==
+          null
       ) {
         const difference =
           result.current_bpm -
@@ -667,18 +778,33 @@ export default function PracticeClient() {
         );
       }
 
-      setTimerRunning(false);
-      setMetronomeRunning(false);
-      setTimerSeconds(0);
-      setSummary(null);
-      setNotes("");
+      setTimerRunning(
+        false
+      );
+
+      setMetronomeRunning(
+        false
+      );
+
+      setTimerSeconds(
+        0
+      );
+
+      setSummary(
+        null
+      );
+
+      setNotes(
+        ""
+      );
 
       await loadData();
 
       if (
         summary.entityType ===
           "song" &&
-        summary.entityId !== null
+        summary.entityId !==
+          null
       ) {
         setSelectedTarget(
           String(
@@ -690,7 +816,8 @@ export default function PracticeClient() {
       if (
         summary.entityType ===
           "exercise" &&
-        summary.entityId !== null
+        summary.entityId !==
+          null
       ) {
         setSelectedTarget(
           String(
@@ -698,31 +825,67 @@ export default function PracticeClient() {
           )
         );
       }
-    } catch (error) {
+    } catch (
+      error
+    ) {
       setError(
-        error instanceof Error
+        error instanceof
+          Error
           ? error.message
           : "Could not save the practice session."
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 
 
   function resetLiveSession() {
-    setTimerRunning(false);
-    setMetronomeRunning(false);
-    setTimerSeconds(0);
+    setTimerRunning(
+      false
+    );
 
-    setTargetType("song");
-    setSelectedTarget("");
-    setFocus("");
-    setNotes("");
-    setPracticeBpm(80);
-    setSummary(null);
-    setUpdateProgress(true);
-    setSaveMessage("");
+    setMetronomeRunning(
+      false
+    );
+
+    setTimerSeconds(
+      0
+    );
+
+    setTargetType(
+      "song"
+    );
+
+    setSelectedTarget(
+      ""
+    );
+
+    setFocus(
+      ""
+    );
+
+    setNotes(
+      ""
+    );
+
+    setPracticeBpm(
+      80
+    );
+
+    setSummary(
+      null
+    );
+
+    setUpdateProgress(
+      true
+    );
+
+    setSaveMessage(
+      ""
+    );
 
     initializedFromUrl.current =
       true;
@@ -735,7 +898,9 @@ export default function PracticeClient() {
   ) {
     event.preventDefault();
 
-    if (!focus.trim()) {
+    if (
+      !focus.trim()
+    ) {
       return;
     }
 
@@ -760,9 +925,17 @@ export default function PracticeClient() {
       }
     );
 
-    setFocus("");
-    setNotes("");
-    setMinutes(30);
+    setFocus(
+      ""
+    );
+
+    setNotes(
+      ""
+    );
+
+    setMinutes(
+      30
+    );
 
     await loadData();
   }
@@ -828,9 +1001,11 @@ export default function PracticeClient() {
             </div>
 
             <p>
-              Tune everything else out.
+              Tune everything
+              else out.
               <br />
-              Work on one thing at a time.
+              Work on one thing
+              at a time.
             </p>
           </div>
 
@@ -909,7 +1084,9 @@ export default function PracticeClient() {
                 </option>
 
                 {songs.map(
-                  (song) => (
+                  (
+                    song
+                  ) => (
                     <option
                       key={
                         song.id
@@ -944,7 +1121,8 @@ export default function PracticeClient() {
                 }
               >
                 <option value="">
-                  Select a drill
+                  Select a
+                  drill
                 </option>
 
                 {exercises.map(
@@ -975,7 +1153,9 @@ export default function PracticeClient() {
             {targetType ===
               "custom" && (
               <input
-                value={focus}
+                value={
+                  focus
+                }
                 onChange={(
                   event
                 ) =>
@@ -991,16 +1171,23 @@ export default function PracticeClient() {
           </div>
 
           <div className="practice-clock">
-            {timerDisplay}
+            {
+              timerDisplay
+            }
           </div>
 
           <div className="practice-wave">
             {Array.from({
               length: 48,
             }).map(
-              (_, index) => (
+              (
+                _,
+                index
+              ) => (
                 <span
-                  key={index}
+                  key={
+                    index
+                  }
                   className={
                     timerRunning
                       ? "practice-wave-active"
@@ -1027,7 +1214,10 @@ export default function PracticeClient() {
                 </p>
 
                 <strong>
-                  {practiceBpm}
+                  {
+                    practiceBpm
+                  }
+
                   <span>
                     BPM
                   </span>
@@ -1057,7 +1247,9 @@ export default function PracticeClient() {
               <button
                 type="button"
                 onClick={() =>
-                  changeBpm(-5)
+                  changeBpm(
+                    -5
+                  )
                 }
               >
                 −5
@@ -1086,7 +1278,9 @@ export default function PracticeClient() {
               <button
                 type="button"
                 onClick={() =>
-                  changeBpm(5)
+                  changeBpm(
+                    5
+                  )
                 }
               >
                 +5
@@ -1111,7 +1305,9 @@ export default function PracticeClient() {
               SESSION NOTES
 
               <textarea
-                value={notes}
+                value={
+                  notes
+                }
                 onChange={(
                   event
                 ) =>
@@ -1128,7 +1324,9 @@ export default function PracticeClient() {
 
           {saveMessage && (
             <p className="practice-save-message">
-              {saveMessage}
+              {
+                saveMessage
+              }
             </p>
           )}
 
@@ -1152,11 +1350,18 @@ export default function PracticeClient() {
                   return;
                 }
 
-                setError("");
-                setSaveMessage("");
+                setError(
+                  ""
+                );
+
+                setSaveMessage(
+                  ""
+                );
 
                 setTimerRunning(
-                  (running) =>
+                  (
+                    running
+                  ) =>
                     !running
                 );
               }}
@@ -1219,7 +1424,9 @@ export default function PracticeClient() {
             >
               <input
                 required
-                value={focus}
+                value={
+                  focus
+                }
                 onChange={(
                   event
                 ) =>
@@ -1236,7 +1443,9 @@ export default function PracticeClient() {
                 <input
                   type="number"
                   min="1"
-                  value={minutes}
+                  value={
+                    minutes
+                  }
                   onChange={(
                     event
                   ) =>
@@ -1282,7 +1491,9 @@ export default function PracticeClient() {
               </div>
 
               <textarea
-                value={notes}
+                value={
+                  notes
+                }
                 onChange={(
                   event
                 ) =>
@@ -1338,7 +1549,8 @@ export default function PracticeClient() {
                   >
                     <span>
                       {String(
-                        index + 1
+                        index +
+                          1
                       ).padStart(
                         2,
                         "0"
@@ -1382,9 +1594,9 @@ export default function PracticeClient() {
               {sessions.length ===
                 0 && (
                 <div className="practice-history-empty">
-                  Your sessions will
-                  appear here after
-                  you start
+                  Your sessions
+                  will appear here
+                  after you start
                   practicing.
                 </div>
               )}
@@ -1404,7 +1616,9 @@ export default function PracticeClient() {
               </h2>
 
               <p className="practice-summary-focus">
-                {summary.focus}
+                {
+                  summary.focus
+                }
               </p>
 
               <div className="practice-summary-stats">
@@ -1482,8 +1696,8 @@ export default function PracticeClient() {
                       }{" "}
                       BPM
                     </strong>{" "}
-                    as my new current
-                    speed
+                    as my new
+                    current speed
                   </span>
                 </label>
               )}

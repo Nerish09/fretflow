@@ -9,10 +9,12 @@ import {
 import {
   BpmProgressPoint,
   Exercise,
+  PracticeGoals,
   PracticeSession,
   Song,
   getBpmProgress,
   getExercises,
+  getPracticeGoals,
   getPracticeSessions,
   getSongs,
 } from "../../../lib/api";
@@ -39,101 +41,64 @@ type HistorySelection = {
   targetBpm: number;
 };
 
-function getStartOfDay(date: Date) {
-  const result = new Date(date);
+function getStartOfDay(
+  date: Date
+) {
+  const result =
+    new Date(date);
 
-  result.setHours(0, 0, 0, 0);
+  result.setHours(
+    0,
+    0,
+    0,
+    0
+  );
 
   return result;
 }
 
-function getDateKey(date: Date) {
-  const year = date.getFullYear();
+function getDateKey(
+  date: Date
+) {
+  const year =
+    date.getFullYear();
 
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
 
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
+  const day =
+    String(
+      date.getDate()
+    ).padStart(
+      2,
+      "0"
+    );
 
   return `${year}-${month}-${day}`;
-}
-
-function calculateStreak(
-  sessions: PracticeSession[]
-) {
-  if (sessions.length === 0) {
-    return 0;
-  }
-
-  const practiceDays = new Set(
-    sessions.map((session) =>
-      getDateKey(
-        new Date(
-          session.started_at
-        )
-      )
-    )
-  );
-
-  const today = getStartOfDay(
-    new Date()
-  );
-
-  const yesterday = new Date(today);
-
-  yesterday.setDate(
-    yesterday.getDate() - 1
-  );
-
-  let cursor =
-    practiceDays.has(
-      getDateKey(today)
-    )
-      ? today
-      : practiceDays.has(
-            getDateKey(yesterday)
-          )
-        ? yesterday
-        : null;
-
-  if (!cursor) {
-    return 0;
-  }
-
-  let streak = 0;
-
-  while (
-    practiceDays.has(
-      getDateKey(cursor)
-    )
-  ) {
-    streak += 1;
-
-    cursor = new Date(cursor);
-
-    cursor.setDate(
-      cursor.getDate() - 1
-    );
-  }
-
-  return streak;
 }
 
 function calculateProgress(
   current: number,
   target: number
 ) {
-  if (target <= 0) {
+  if (
+    target <= 0
+  ) {
     return 0;
   }
 
   return Math.min(
     100,
     Math.round(
-      (current / target) * 100
+      (
+        current /
+        target
+      ) * 100
     )
   );
 }
@@ -141,24 +106,32 @@ function calculateProgress(
 function formatPracticeTime(
   minutes: number
 ) {
-  if (minutes < 60) {
+  if (
+    minutes < 60
+  ) {
     return {
-      primary: String(minutes),
+      primary:
+        String(minutes),
       unit: "MIN",
       secondary: "",
     };
   }
 
-  const hours = Math.floor(
-    minutes / 60
-  );
+  const hours =
+    Math.floor(
+      minutes / 60
+    );
 
   const remainingMinutes =
     minutes % 60;
 
   return {
-    primary: String(hours),
-    unit: "H",
+    primary:
+      String(hours),
+
+    unit:
+      "H",
+
     secondary:
       remainingMinutes > 0
         ? `${remainingMinutes} MIN`
@@ -167,28 +140,68 @@ function formatPracticeTime(
 }
 
 export default function ProgressPage() {
-  const [songs, setSongs] =
+  const [
+    songs,
+    setSongs,
+  ] =
     useState<Song[]>([]);
 
-  const [exercises, setExercises] =
-    useState<Exercise[]>([]);
+  const [
+    exercises,
+    setExercises,
+  ] =
+    useState<
+      Exercise[]
+    >([]);
 
-  const [sessions, setSessions] =
-    useState<PracticeSession[]>([]);
+  const [
+    sessions,
+    setSessions,
+  ] =
+    useState<
+      PracticeSession[]
+    >([]);
 
-  const [historySelection, setHistorySelection] =
-    useState<HistorySelection | null>(null);
+  const [
+    goals,
+    setGoals,
+  ] =
+    useState<
+      PracticeGoals | null
+    >(null);
 
-  const [history, setHistory] =
-    useState<BpmProgressPoint[]>([]);
+  const [
+    historySelection,
+    setHistorySelection,
+  ] =
+    useState<
+      HistorySelection | null
+    >(null);
 
-  const [historyLoading, setHistoryLoading] =
+  const [
+    history,
+    setHistory,
+  ] =
+    useState<
+      BpmProgressPoint[]
+    >([]);
+
+  const [
+    historyLoading,
+    setHistoryLoading,
+  ] =
     useState(false);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
   useEffect(() => {
@@ -198,31 +211,67 @@ export default function ProgressPage() {
           songData,
           exerciseData,
           sessionData,
-        ] = await Promise.all([
-          getSongs(),
-          getExercises(),
-          getPracticeSessions(),
-        ]);
+          goalData,
+        ] =
+          await Promise.all([
+            getSongs(),
+            getExercises(),
+            getPracticeSessions(),
+            getPracticeGoals(),
+          ]);
 
-        setSongs(songData);
-        setExercises(exerciseData);
-        setSessions(sessionData);
+        setSongs(
+          songData
+        );
 
-        if (songData.length > 0) {
-          setHistorySelection({
-            type: "song",
-            id: songData[0].id,
-            name: songData[0].title,
-            targetBpm:
-              songData[0].target_bpm,
-          });
-        } else if (
-          exerciseData.length > 0
+        setExercises(
+          exerciseData
+        );
+
+        setSessions(
+          sessionData
+        );
+
+        setGoals(
+          goalData
+        );
+
+        if (
+          songData.length >
+          0
         ) {
           setHistorySelection({
-            type: "exercise",
-            id: exerciseData[0].id,
-            name: exerciseData[0].name,
+            type:
+              "song",
+
+            id:
+              songData[0]
+                .id,
+
+            name:
+              songData[0]
+                .title,
+
+            targetBpm:
+              songData[0]
+                .target_bpm,
+          });
+        } else if (
+          exerciseData.length >
+          0
+        ) {
+          setHistorySelection({
+            type:
+              "exercise",
+
+            id:
+              exerciseData[0]
+                .id,
+
+            name:
+              exerciseData[0]
+                .name,
+
             targetBpm:
               exerciseData[0]
                 .target_bpm,
@@ -233,7 +282,9 @@ export default function ProgressPage() {
           "Could not load progress data."
         );
       } finally {
-        setLoading(false);
+        setLoading(
+          false
+        );
       }
     }
 
@@ -242,12 +293,19 @@ export default function ProgressPage() {
 
   useEffect(() => {
     async function loadHistory() {
-      if (!historySelection) {
-        setHistory([]);
+      if (
+        !historySelection
+      ) {
+        setHistory(
+          []
+        );
+
         return;
       }
 
-      setHistoryLoading(true);
+      setHistoryLoading(
+        true
+      );
 
       try {
         const data =
@@ -256,19 +314,29 @@ export default function ProgressPage() {
             historySelection.id
           );
 
-        setHistory(data);
+        setHistory(
+          data
+        );
       } catch {
-        setHistory([]);
+        setHistory(
+          []
+        );
       } finally {
-        setHistoryLoading(false);
+        setHistoryLoading(
+          false
+        );
       }
     }
 
     loadHistory();
-  }, [historySelection]);
+  }, [
+    historySelection,
+  ]);
 
   const lastSevenDays =
-    useMemo<DailyPractice[]>(
+    useMemo<
+      DailyPractice[]
+    >(
       () => {
         const today =
           getStartOfDay(
@@ -279,22 +347,34 @@ export default function ProgressPage() {
           {
             length: 7,
           },
-          (_, index) => {
+          (
+            _,
+            index
+          ) => {
             const date =
-              new Date(today);
+              new Date(
+                today
+              );
 
             date.setDate(
               date.getDate() -
-                (6 - index)
+                (
+                  6 -
+                  index
+                )
             );
 
             const dateKey =
-              getDateKey(date);
+              getDateKey(
+                date
+              );
 
             const minutes =
               sessions
                 .filter(
-                  (session) =>
+                  (
+                    session
+                  ) =>
                     getDateKey(
                       new Date(
                         session.started_at
@@ -314,6 +394,7 @@ export default function ProgressPage() {
 
             return {
               date,
+
               label:
                 date.toLocaleDateString(
                   undefined,
@@ -322,17 +403,23 @@ export default function ProgressPage() {
                       "short",
                   }
                 ),
+
               minutes,
             };
           }
         );
       },
-      [sessions]
+      [
+        sessions,
+      ]
     );
 
   const weeklyMinutes =
     lastSevenDays.reduce(
-      (total, day) =>
+      (
+        total,
+        day
+      ) =>
         total +
         day.minutes,
       0
@@ -345,20 +432,16 @@ export default function ProgressPage() {
 
   const activeDays =
     lastSevenDays.filter(
-      (day) =>
-        day.minutes > 0
+      (
+        day
+      ) =>
+        day.minutes >
+        0
     ).length;
 
-  const streak = useMemo(
-    () =>
-      calculateStreak(
-        sessions
-      ),
-    [sessions]
-  );
-
   const averageSession =
-    sessions.length > 0
+    sessions.length >
+    0
       ? Math.round(
           sessions.reduce(
             (
@@ -375,13 +458,16 @@ export default function ProgressPage() {
 
   const masteredSongs =
     songs.filter(
-      (song) =>
+      (
+        song
+      ) =>
         song.status ===
         "Mastered"
     );
 
   const averageSongProgress =
-    songs.length > 0
+    songs.length >
+    0
       ? Math.round(
           songs.reduce(
             (
@@ -394,101 +480,137 @@ export default function ProgressPage() {
                 song.target_bpm
               ),
             0
-          ) / songs.length
+          ) /
+            songs.length
         )
       : 0;
 
   const recommendations =
     useMemo<
       PracticeRecommendation[]
-    >(() => {
-      const songOptions =
-        songs
-          .filter(
-            (song) =>
-              song.status !==
-              "Mastered"
+    >(
+      () => {
+        const songOptions =
+          songs
+            .filter(
+              (
+                song
+              ) =>
+                song.status !==
+                "Mastered"
+            )
+            .map(
+              (
+                song
+              ) => {
+                const progress =
+                  calculateProgress(
+                    song.current_bpm,
+                    song.target_bpm
+                  );
+
+                return {
+                  type:
+                    "Song" as const,
+
+                  name:
+                    song.title,
+
+                  detail:
+                    `${song.current_bpm} → ${song.target_bpm} BPM`,
+
+                  progress,
+                };
+              }
+            );
+
+        const exerciseOptions =
+          exercises.map(
+            (
+              exercise
+            ) => {
+              const progress =
+                calculateProgress(
+                  exercise.current_bpm,
+                  exercise.target_bpm
+                );
+
+              return {
+                type:
+                  "Drill" as const,
+
+                name:
+                  exercise.name,
+
+                detail:
+                  `${exercise.category} · ${exercise.current_bpm} → ${exercise.target_bpm} BPM`,
+
+                progress,
+              };
+            }
+          );
+
+        return [
+          ...songOptions,
+          ...exerciseOptions,
+        ]
+          .sort(
+            (
+              a,
+              b
+            ) =>
+              a.progress -
+              b.progress
           )
-          .map((song) => {
-            const progress =
-              calculateProgress(
-                song.current_bpm,
-                song.target_bpm
-              );
-
-            return {
-              type:
-                "Song" as const,
-              name: song.title,
-              detail: `${song.current_bpm} → ${song.target_bpm} BPM`,
-              progress,
-            };
-          });
-
-      const exerciseOptions =
-        exercises.map(
-          (exercise) => {
-            const progress =
-              calculateProgress(
-                exercise.current_bpm,
-                exercise.target_bpm
-              );
-
-            return {
-              type:
-                "Drill" as const,
-              name:
-                exercise.name,
-              detail: `${exercise.category} · ${exercise.current_bpm} → ${exercise.target_bpm} BPM`,
-              progress,
-            };
-          }
-        );
-
-      return [
-        ...songOptions,
-        ...exerciseOptions,
+          .slice(
+            0,
+            3
+          );
+      },
+      [
+        songs,
+        exercises,
       ]
-        .sort(
-          (a, b) =>
-            a.progress -
-            b.progress
-        )
-        .slice(0, 3);
-    }, [
-      songs,
-      exercises,
-    ]);
+    );
 
   const maxDailyMinutes =
     Math.max(
       1,
       ...lastSevenDays.map(
-        (day) =>
+        (
+          day
+        ) =>
           day.minutes
       )
     );
 
   const bpmGain =
-    history.length >= 2
+    history.length >=
+    2
       ? history[
-          history.length - 1
+          history.length -
+            1
         ].bpm -
         history[0].bpm
       : 0;
 
   const latestBpm =
-    history.length > 0
+    history.length >
+    0
       ? history[
-          history.length - 1
+          history.length -
+            1
         ].bpm
       : 0;
 
   const historyMin =
-    history.length > 0
+    history.length >
+    0
       ? Math.min(
           ...history.map(
-            (point) =>
+            (
+              point
+            ) =>
               point.bpm
           )
         )
@@ -499,7 +621,9 @@ export default function ProgressPage() {
       ? Math.max(
           historySelection.targetBpm,
           ...history.map(
-            (point) =>
+            (
+              point
+            ) =>
               point.bpm
           )
         )
@@ -508,23 +632,37 @@ export default function ProgressPage() {
   const historyRange =
     Math.max(
       1,
-      historyMax - historyMin
+      historyMax -
+        historyMin
     );
 
   function selectHistory(
     value: string
   ) {
-    const [type, idValue] =
-      value.split(":");
+    const [
+      type,
+      idValue,
+    ] =
+      value.split(
+        ":"
+      );
 
     const id =
-      Number(idValue);
+      Number(
+        idValue
+      );
 
-    if (type === "song") {
+    if (
+      type ===
+      "song"
+    ) {
       const song =
         songs.find(
-          (item) =>
-            item.id === id
+          (
+            item
+          ) =>
+            item.id ===
+            id
         );
 
       if (!song) {
@@ -532,9 +670,15 @@ export default function ProgressPage() {
       }
 
       setHistorySelection({
-        type: "song",
-        id: song.id,
-        name: song.title,
+        type:
+          "song",
+
+        id:
+          song.id,
+
+        name:
+          song.title,
+
         targetBpm:
           song.target_bpm,
       });
@@ -544,8 +688,11 @@ export default function ProgressPage() {
 
     const exercise =
       exercises.find(
-        (item) =>
-          item.id === id
+        (
+          item
+        ) =>
+          item.id ===
+          id
       );
 
     if (!exercise) {
@@ -553,9 +700,15 @@ export default function ProgressPage() {
     }
 
     setHistorySelection({
-      type: "exercise",
-      id: exercise.id,
-      name: exercise.name,
+      type:
+        "exercise",
+
+      id:
+        exercise.id,
+
+      name:
+        exercise.name,
+
       targetBpm:
         exercise.target_bpm,
     });
@@ -579,10 +732,12 @@ export default function ProgressPage() {
             </h1>
 
             <p>
-              Practice only feels slow
-              when you can&apos;t see how
-              far you&apos;ve already
-              moved.
+              Practice only
+              feels slow when
+              you can&apos;t see
+              how far
+              you&apos;ve
+              already moved.
             </p>
           </div>
 
@@ -595,9 +750,12 @@ export default function ProgressPage() {
               {loading
                 ? "—"
                 : weeklyTime.primary}
+
               {!loading && (
                 <small>
-                  {weeklyTime.unit}
+                  {
+                    weeklyTime.unit
+                  }
                 </small>
               )}
             </strong>
@@ -642,13 +800,14 @@ export default function ProgressPage() {
             <strong>
               {loading
                 ? "—"
-                : streak}
+                : goals
+                    ?.streaks
+                    .current ??
+                  0}
             </strong>
 
             <small>
-              {streak === 1
-                ? "Day"
-                : "Days"}
+              Days
             </small>
           </article>
 
@@ -680,7 +839,8 @@ export default function ProgressPage() {
             </strong>
 
             <small>
-              Avg. toward goal
+              Avg. toward
+              goal
             </small>
           </article>
 
@@ -699,6 +859,197 @@ export default function ProgressPage() {
               Songs
             </small>
           </article>
+        </section>
+
+        <section className="practice-goals-section">
+          <div className="progress-section-heading">
+            <div>
+              <p className="studio-kicker">
+                PRACTICE GOALS
+              </p>
+
+              <h2>
+                Keep the streak
+                alive.
+              </h2>
+            </div>
+
+            <p>
+              Consistency beats
+              intensity.
+            </p>
+          </div>
+
+          <div className="practice-goals-grid">
+            <article className="practice-goal-card">
+              <div className="practice-goal-heading">
+                <span>
+                  DAILY GOAL
+                </span>
+
+                <strong>
+                  {goals
+                    ?.daily
+                    .completed_minutes ??
+                    0}
+                  <small>
+                    {" "}
+                    /{" "}
+                    {goals
+                      ?.daily
+                      .goal_minutes ??
+                      30}{" "}
+                    MIN
+                  </small>
+                </strong>
+              </div>
+
+              <div className="practice-goal-meter">
+                <span
+                  style={{
+                    width: `${
+                      goals
+                        ?.daily
+                        .progress_percent ??
+                      0
+                    }%`,
+                  }}
+                />
+              </div>
+
+              <div className="practice-goal-footer">
+                <span>
+                  {goals?.daily
+                    .completed
+                    ? "Goal complete"
+                    : `${
+                        goals
+                          ?.daily
+                          .remaining_minutes ??
+                        30
+                      } min left`}
+                </span>
+
+                <strong>
+                  {goals
+                    ?.daily
+                    .progress_percent ??
+                    0}
+                  %
+                </strong>
+              </div>
+            </article>
+
+            <article className="practice-goal-card">
+              <div className="practice-goal-heading">
+                <span>
+                  7 DAY GOAL
+                </span>
+
+                <strong>
+                  {goals
+                    ?.weekly
+                    .completed_minutes ??
+                    0}
+                  <small>
+                    {" "}
+                    /{" "}
+                    {goals
+                      ?.weekly
+                      .goal_minutes ??
+                      180}{" "}
+                    MIN
+                  </small>
+                </strong>
+              </div>
+
+              <div className="practice-goal-meter">
+                <span
+                  style={{
+                    width: `${
+                      goals
+                        ?.weekly
+                        .progress_percent ??
+                      0
+                    }%`,
+                  }}
+                />
+              </div>
+
+              <div className="practice-goal-footer">
+                <span>
+                  {goals?.weekly
+                    .completed
+                    ? "Goal complete"
+                    : `${
+                        goals
+                          ?.weekly
+                          .remaining_minutes ??
+                        180
+                      } min left`}
+                </span>
+
+                <strong>
+                  {goals
+                    ?.weekly
+                    .progress_percent ??
+                    0}
+                  %
+                </strong>
+              </div>
+            </article>
+
+            <article className="practice-streak-card">
+              <span>
+                CURRENT STREAK
+              </span>
+
+              <strong>
+                {goals
+                  ?.streaks
+                  .current ??
+                  0}
+              </strong>
+
+              <small>
+                DAYS
+              </small>
+
+              <p>
+                Longest streak:{" "}
+                <strong>
+                  {goals
+                    ?.streaks
+                    .longest ??
+                    0}{" "}
+                  days
+                </strong>
+              </p>
+            </article>
+
+            <article className="practice-streak-card">
+              <span>
+                PRACTICE DAYS
+              </span>
+
+              <strong>
+                {goals
+                  ?.streaks
+                  .practice_days ??
+                  0}
+              </strong>
+
+              <small>
+                TOTAL
+              </small>
+
+              <p>
+                Every day you
+                practice adds to
+                the tape.
+              </p>
+            </article>
+          </div>
         </section>
 
         <section className="bpm-history-section">
@@ -720,31 +1071,43 @@ export default function ProgressPage() {
                   ? `${historySelection.type}:${historySelection.id}`
                   : ""
               }
-              onChange={(event) =>
+              onChange={(
+                event
+              ) =>
                 selectHistory(
-                  event.target.value
+                  event
+                    .target
+                    .value
                 )
               }
             >
-              {songs.length > 0 && (
+              {songs.length >
+                0 && (
                 <optgroup label="Songs">
                   {songs.map(
-                    (song) => (
+                    (
+                      song
+                    ) => (
                       <option
                         key={`song-${song.id}`}
                         value={`song:${song.id}`}
                       >
-                        {song.title}
+                        {
+                          song.title
+                        }
                       </option>
                     )
                   )}
                 </optgroup>
               )}
 
-              {exercises.length > 0 && (
+              {exercises.length >
+                0 && (
                 <optgroup label="Drills">
                   {exercises.map(
-                    (exercise) => (
+                    (
+                      exercise
+                    ) => (
                       <option
                         key={`exercise-${exercise.id}`}
                         value={`exercise:${exercise.id}`}
@@ -772,6 +1135,7 @@ export default function ProgressPage() {
                     {historyLoading
                       ? "—"
                       : latestBpm}
+
                     <small>
                       BPM
                     </small>
@@ -787,6 +1151,7 @@ export default function ProgressPage() {
                     {
                       historySelection.targetBpm
                     }
+
                     <small>
                       BPM
                     </small>
@@ -800,17 +1165,24 @@ export default function ProgressPage() {
 
                   <strong
                     className={
-                      bpmGain > 0
+                      bpmGain >
+                      0
                         ? "bpm-gain-positive"
-                        : bpmGain < 0
+                        : bpmGain <
+                            0
                           ? "bpm-gain-negative"
                           : ""
                     }
                   >
-                    {bpmGain > 0
+                    {bpmGain >
+                    0
                       ? "+"
                       : ""}
-                    {bpmGain}
+
+                    {
+                      bpmGain
+                    }
+
                     <small>
                       BPM
                     </small>
@@ -823,7 +1195,9 @@ export default function ProgressPage() {
                   </span>
 
                   <strong>
-                    {history.length}
+                    {
+                      history.length
+                    }
                   </strong>
                 </div>
               </div>
@@ -831,11 +1205,14 @@ export default function ProgressPage() {
               <div className="bpm-history-chart">
                 {historyLoading ? (
                   <div className="bpm-history-empty">
-                    Loading BPM history...
+                    Loading BPM
+                    history...
                   </div>
-                ) : history.length === 0 ? (
+                ) : history.length ===
+                  0 ? (
                   <div className="bpm-history-empty">
-                    No BPM history yet.
+                    No BPM history
+                    yet.
                   </div>
                 ) : (
                   history.map(
@@ -846,9 +1223,13 @@ export default function ProgressPage() {
                       const height =
                         Math.max(
                           8,
-                          ((point.bpm -
-                            historyMin) /
-                            historyRange) *
+                          (
+                            (
+                              point.bpm -
+                              historyMin
+                            ) /
+                            historyRange
+                          ) *
                             82 +
                             10
                         );
@@ -904,7 +1285,8 @@ export default function ProgressPage() {
                   )
                 )}
 
-                {history.length > 0 && (
+                {history.length >
+                  0 && (
                   <div
                     className="bpm-target-line"
                     style={{
@@ -912,9 +1294,13 @@ export default function ProgressPage() {
                         92,
                         Math.max(
                           10,
-                          ((historySelection.targetBpm -
-                            historyMin) /
-                            historyRange) *
+                          (
+                            (
+                              historySelection.targetBpm -
+                              historyMin
+                            ) /
+                            historyRange
+                          ) *
                             82 +
                             10
                         )
@@ -934,8 +1320,9 @@ export default function ProgressPage() {
             </>
           ) : (
             <div className="bpm-history-empty">
-              Add a song or drill to
-              start tracking BPM.
+              Add a song or drill
+              to start tracking
+              BPM.
             </div>
           )}
         </section>
@@ -953,14 +1340,16 @@ export default function ProgressPage() {
             </div>
 
             <p>
-              {weeklyMinutes} minutes
-              total
+              {weeklyMinutes}{" "}
+              minutes total
             </p>
           </div>
 
           <div className="progress-week-chart">
             {lastSevenDays.map(
-              (day) => {
+              (
+                day
+              ) => {
                 const height =
                   day.minutes ===
                   0
@@ -968,8 +1357,10 @@ export default function ProgressPage() {
                     : Math.max(
                         10,
                         Math.round(
-                          (day.minutes /
-                            maxDailyMinutes) *
+                          (
+                            day.minutes /
+                            maxDailyMinutes
+                          ) *
                             100
                         )
                       );
@@ -1006,7 +1397,9 @@ export default function ProgressPage() {
                     </div>
 
                     <strong>
-                      {day.label}
+                      {
+                        day.label
+                      }
                     </strong>
 
                     <small>
@@ -1044,10 +1437,12 @@ export default function ProgressPage() {
             {recommendations.length ===
             0 ? (
               <div className="progress-empty">
-                Add songs or drills
-                and FretFlow will
-                suggest what needs
-                the most attention.
+                Add songs or
+                drills and
+                FretFlow will
+                suggest what
+                needs the most
+                attention.
               </div>
             ) : (
               <div className="progress-recommendations">
@@ -1061,7 +1456,8 @@ export default function ProgressPage() {
                     >
                       <span className="progress-rec-number">
                         {String(
-                          index + 1
+                          index +
+                            1
                         ).padStart(
                           2,
                           "0"
@@ -1070,7 +1466,9 @@ export default function ProgressPage() {
 
                       <div className="progress-rec-info">
                         <span>
-                          {item.type}
+                          {
+                            item.type
+                          }
                         </span>
 
                         <strong>
@@ -1126,9 +1524,14 @@ export default function ProgressPage() {
               {masteredSongs.length >
               0 ? (
                 masteredSongs
-                  .slice(0, 4)
+                  .slice(
+                    0,
+                    4
+                  )
                   .map(
-                    (song) => (
+                    (
+                      song
+                    ) => (
                       <article
                         key={
                           song.id
@@ -1159,8 +1562,8 @@ export default function ProgressPage() {
               ) : (
                 <div className="progress-empty">
                   Your mastered
-                  songs will appear
-                  here.
+                  songs will
+                  appear here.
                 </div>
               )}
             </div>
@@ -1186,7 +1589,10 @@ export default function ProgressPage() {
 
           <div className="progress-session-list">
             {sessions
-              .slice(0, 6)
+              .slice(
+                0,
+                6
+              )
               .map(
                 (
                   session,
@@ -1199,7 +1605,8 @@ export default function ProgressPage() {
                   >
                     <span>
                       {String(
-                        index + 1
+                        index +
+                          1
                       ).padStart(
                         2,
                         "0"
@@ -1234,6 +1641,7 @@ export default function ProgressPage() {
                       {
                         session.duration_minutes
                       }
+
                       <small>
                         MIN
                       </small>

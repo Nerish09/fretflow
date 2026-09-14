@@ -16,13 +16,26 @@ const API_URL =
 
 
 type QueueItem = {
-  type: "song" | "exercise";
-  id: number;
+  type:
+    | "song"
+    | "exercise"
+    | "warmup";
+
+  id: number | null;
+
   name: string;
   subtitle: string;
-  current_bpm: number;
-  target_bpm: number;
+
+  current_bpm:
+    | number
+    | null;
+
+  target_bpm:
+    | number
+    | null;
+
   progress: number;
+
   suggested_minutes: number;
 };
 
@@ -102,6 +115,31 @@ export default function TodayPage() {
   function startItem(
     item: QueueItem
   ) {
+    if (
+      item.type ===
+      "warmup"
+    ) {
+      const params =
+        new URLSearchParams({
+          type: "custom",
+          focus: item.name,
+          bpm: "80",
+        });
+
+      router.push(
+        `/dashboard/practice?${params.toString()}`
+      );
+
+      return;
+    }
+
+    if (
+      item.id === null ||
+      item.current_bpm === null
+    ) {
+      return;
+    }
+
     const params =
       new URLSearchParams({
         type: item.type,
@@ -113,6 +151,29 @@ export default function TodayPage() {
 
     router.push(
       `/dashboard/practice?${params.toString()}`
+    );
+  }
+
+
+  function getItemLabel(
+    item: QueueItem
+  ) {
+    if (
+      item.type ===
+      "warmup"
+    ) {
+      return "WARM-UP";
+    }
+
+    if (
+      item.type ===
+      "song"
+    ) {
+      return "SONG";
+    }
+
+    return (
+      item.subtitle.toUpperCase()
     );
   }
 
@@ -151,7 +212,9 @@ export default function TodayPage() {
 
             <strong>
               {minutes}
-              <small>MIN</small>
+              <small>
+                MIN
+              </small>
             </strong>
 
             <div className="today-duration-options">
@@ -188,9 +251,13 @@ export default function TodayPage() {
             <strong>
               {loading
                 ? "—"
-                : queue?.planned_minutes ??
+                : queue
+                    ?.planned_minutes ??
                   0}
-              <small> MIN</small>
+
+              <small>
+                {" "}MIN
+              </small>
             </strong>
           </div>
 
@@ -237,23 +304,33 @@ export default function TodayPage() {
             </div>
 
             <p>
-              Lowest progress gets
-              priority.
+              Balanced to fill your
+              available time.
             </p>
           </div>
 
           {loading ? (
             <div className="today-loading">
-              Building your session...
+              Building your
+              session...
             </div>
           ) : queue &&
-            queue.items.length > 0 ? (
+            queue.items.length >
+              0 ? (
             <div className="today-queue">
               {queue.items.map(
-                (item, index) => (
+                (
+                  item,
+                  index
+                ) => (
                   <article
-                    key={`${item.type}-${item.id}`}
-                    className="today-queue-item"
+                    key={`${item.type}-${item.id ?? "none"}-${index}`}
+                    className={
+                      item.type ===
+                      "warmup"
+                        ? "today-queue-item today-queue-item-warmup"
+                        : "today-queue-item"
+                    }
                   >
                     <span className="today-item-number">
                       {String(
@@ -266,18 +343,21 @@ export default function TodayPage() {
 
                     <div className="today-item-main">
                       <span>
-                        {item.type ===
-                        "song"
-                          ? "SONG"
-                          : item.subtitle.toUpperCase()}
+                        {getItemLabel(
+                          item
+                        )}
                       </span>
 
                       <h2>
-                        {item.name}
+                        {
+                          item.name
+                        }
                       </h2>
 
                       <p>
-                        {item.subtitle}
+                        {
+                          item.subtitle
+                        }
                       </p>
                     </div>
 
@@ -293,44 +373,83 @@ export default function TodayPage() {
                       </span>
                     </div>
 
-                    <div className="today-bpm">
-                      <span>
-                        TEMPO
-                      </span>
+                    {item.current_bpm !==
+                      null &&
+                    item.target_bpm !==
+                      null ? (
+                      <div className="today-bpm">
+                        <span>
+                          TEMPO
+                        </span>
 
-                      <div>
-                        <strong>
-                          {
-                            item.current_bpm
-                          }
-                        </strong>
+                        <div>
+                          <strong>
+                            {
+                              item.current_bpm
+                            }
+                          </strong>
+
+                          <small>
+                            →{" "}
+                            {
+                              item.target_bpm
+                            }{" "}
+                            BPM
+                          </small>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="today-bpm">
+                        <span>
+                          FOCUS
+                        </span>
+
+                        <div>
+                          <strong>
+                            —
+                          </strong>
+
+                          <small>
+                            Get loose
+                          </small>
+                        </div>
+                      </div>
+                    )}
+
+                    {item.type !==
+                    "warmup" ? (
+                      <div className="today-progress">
+                        <div>
+                          <span
+                            style={{
+                              width: `${item.progress}%`,
+                            }}
+                          />
+                        </div>
 
                         <small>
-                          →{" "}
                           {
-                            item.target_bpm
-                          }{" "}
-                          BPM
+                            item.progress
+                          }
+                          %
                         </small>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="today-progress today-progress-warmup">
+                        <div>
+                          <span
+                            style={{
+                              width:
+                                "100%",
+                            }}
+                          />
+                        </div>
 
-                    <div className="today-progress">
-                      <div>
-                        <span
-                          style={{
-                            width: `${item.progress}%`,
-                          }}
-                        />
+                        <small>
+                          READY
+                        </small>
                       </div>
-
-                      <small>
-                        {
-                          item.progress
-                        }
-                        %
-                      </small>
-                    </div>
+                    )}
 
                     <button
                       className="today-start-button"
@@ -341,7 +460,9 @@ export default function TodayPage() {
                       }
                     >
                       START
-                      <span>→</span>
+                      <span>
+                        →
+                      </span>
                     </button>
                   </article>
                 )
@@ -349,16 +470,20 @@ export default function TodayPage() {
             </div>
           ) : (
             <div className="today-empty">
-              <span>♪</span>
+              <span>
+                ♪
+              </span>
 
               <h2>
-                Nothing to queue yet.
+                Nothing to queue
+                yet.
               </h2>
 
               <p>
-                Add some songs or drills
-                and FretFlow will build
-                your practice session.
+                Add some songs or
+                drills and FretFlow
+                will build your
+                practice session.
               </p>
             </div>
           )}

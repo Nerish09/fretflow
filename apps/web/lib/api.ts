@@ -353,3 +353,47 @@ export async function getBpmProgress(
 
   return response.json();
 }
+
+// --------------------
+// Practice Goals
+// --------------------
+
+export type PracticeGoalProgress = {
+  goal_minutes: number;
+  completed_minutes: number;
+  remaining_minutes: number;
+  progress_percent: number;
+  completed: boolean;
+};
+
+export type PracticeGoals = {
+  daily: PracticeGoalProgress;
+
+  weekly: PracticeGoalProgress & {
+    window_days: number;
+  };
+
+  streaks: {
+    current: number;
+    longest: number;
+    practice_days: number;
+  };
+};
+
+export async function getPracticeGoals(
+  dailyGoal = 30,
+  weeklyGoal = 180
+): Promise<PracticeGoals> {
+  const response = await fetch(
+    `${API_URL}/practice-goals?daily_goal=${dailyGoal}&weekly_goal=${weeklyGoal}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to load practice goals");
+  }
+
+  return response.json();
+}
