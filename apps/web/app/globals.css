@@ -5284,3 +5284,52 @@ a {
     width: 100%;
   }
 }
+
+
+.practice-save-message {
+  width: min(720px, 100%);
+  margin: -15px auto 25px;
+
+  color: var(--studio-cyan);
+
+  font-family: monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+
+  text-align: center;
+}
+
+.practice-progress-toggle {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  margin-top: 25px;
+  padding: 16px 0;
+
+  border-top:
+    1px solid var(--studio-line);
+  border-bottom:
+    1px solid var(--studio-line);
+
+  color: var(--studio-muted);
+
+  cursor: pointer;
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.practice-progress-toggle input {
+  width: 16px;
+  height: 16px;
+
+  accent-color:
+    var(--studio-gold);
+}
+
+.practice-progress-toggle strong {
+  color:
+    var(--studio-gold);
+}

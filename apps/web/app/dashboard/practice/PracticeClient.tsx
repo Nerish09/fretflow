@@ -16,6 +16,7 @@ import {
   Exercise,
   PracticeSession,
   Song,
+  completePracticeSession,
   createPracticeSession,
   deletePracticeSession,
   getExercises,
@@ -37,10 +38,15 @@ type PracticeSummary = {
   durationMinutes: number;
   bpm: number;
   notes: string;
+  entityType:
+    | "song"
+    | "exercise"
+    | "custom";
+  entityId: number | null;
 };
 
 
-export default function PracticePage() {
+export default function PracticeClient() {
   const searchParams =
     useSearchParams();
 
@@ -107,6 +113,14 @@ export default function PracticePage() {
 
   const [saving, setSaving] =
     useState(false);
+
+  const [
+    updateProgress,
+    setUpdateProgress,
+  ] = useState(true);
+
+  const [saveMessage, setSaveMessage] =
+    useState("");
 
   const [error, setError] =
     useState("");
@@ -491,6 +505,7 @@ export default function PracticePage() {
     setTargetType(type);
     setSelectedTarget("");
     setFocus("");
+    setSaveMessage("");
 
     initializedFromUrl.current =
       true;
@@ -555,6 +570,7 @@ export default function PracticePage() {
     setTimerRunning(false);
     setMetronomeRunning(false);
     setError("");
+    setSaveMessage("");
 
     setSummary({
       focus:
@@ -573,6 +589,18 @@ export default function PracticePage() {
 
       notes:
         notes.trim(),
+
+      entityType:
+        targetType,
+
+      entityId:
+        targetType ===
+          "custom" ||
+        !selectedTarget
+          ? null
+          : Number(
+              selectedTarget
+            ),
     });
   }
 
@@ -584,35 +612,97 @@ export default function PracticePage() {
 
     setSaving(true);
     setError("");
+    setSaveMessage("");
 
     try {
-      const bpmNote =
-        `Practice BPM: ${summary.bpm}`;
+      const result =
+        await completePracticeSession(
+          {
+            focus:
+              summary.focus,
 
-      const finalNotes =
-        summary.notes
-          ? `${bpmNote}\n${summary.notes}`
-          : bpmNote;
+            duration_minutes:
+              summary.durationMinutes,
 
-      await createPracticeSession(
-        {
-          focus:
-            summary.focus,
+            notes:
+              summary.notes ||
+              null,
 
-          duration_minutes:
-            summary.durationMinutes,
+            entity_type:
+              summary.entityType,
 
-          notes:
-            finalNotes,
-        }
-      );
+            entity_id:
+              summary.entityId,
 
-      resetLiveSession();
+            bpm:
+              summary.bpm,
+
+            update_progress:
+              summary.entityType ===
+              "custom"
+                ? false
+                : updateProgress,
+          }
+        );
+
+      if (
+        result.progress_updated &&
+        result.previous_bpm !== null &&
+        result.current_bpm !== null
+      ) {
+        const difference =
+          result.current_bpm -
+          result.previous_bpm;
+
+        setSaveMessage(
+          difference > 0
+            ? `Progress saved: ${result.previous_bpm} → ${result.current_bpm} BPM (+${difference}).`
+            : difference < 0
+              ? `Session saved at ${result.current_bpm} BPM.`
+              : "Session saved."
+        );
+      } else {
+        setSaveMessage(
+          "Session saved."
+        );
+      }
+
+      setTimerRunning(false);
+      setMetronomeRunning(false);
+      setTimerSeconds(0);
+      setSummary(null);
+      setNotes("");
 
       await loadData();
-    } catch {
+
+      if (
+        summary.entityType ===
+          "song" &&
+        summary.entityId !== null
+      ) {
+        setSelectedTarget(
+          String(
+            summary.entityId
+          )
+        );
+      }
+
+      if (
+        summary.entityType ===
+          "exercise" &&
+        summary.entityId !== null
+      ) {
+        setSelectedTarget(
+          String(
+            summary.entityId
+          )
+        );
+      }
+    } catch (error) {
       setError(
-        "Could not save the practice session."
+        error instanceof Error
+          ? error.message
+          : "Could not save the practice session."
       );
     } finally {
       setSaving(false);
@@ -631,6 +721,8 @@ export default function PracticePage() {
     setNotes("");
     setPracticeBpm(80);
     setSummary(null);
+    setUpdateProgress(true);
+    setSaveMessage("");
 
     initializedFromUrl.current =
       true;
@@ -1034,6 +1126,12 @@ export default function PracticePage() {
             </label>
           </div>
 
+          {saveMessage && (
+            <p className="practice-save-message">
+              {saveMessage}
+            </p>
+          )}
+
           {error && (
             <p className="practice-error">
               {error}
@@ -1055,6 +1153,7 @@ export default function PracticePage() {
                 }
 
                 setError("");
+                setSaveMessage("");
 
                 setTimerRunning(
                   (running) =>
@@ -1354,6 +1453,39 @@ export default function PracticePage() {
                     }
                   </p>
                 </div>
+              )}
+
+              {summary.entityType !==
+                "custom" && (
+                <label className="practice-progress-toggle">
+                  <input
+                    type="checkbox"
+                    checked={
+                      updateProgress
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setUpdateProgress(
+                        event
+                          .target
+                          .checked
+                      )
+                    }
+                  />
+
+                  <span>
+                    Use{" "}
+                    <strong>
+                      {
+                        summary.bpm
+                      }{" "}
+                      BPM
+                    </strong>{" "}
+                    as my new current
+                    speed
+                  </span>
+                </label>
               )}
 
               <div className="practice-summary-actions">

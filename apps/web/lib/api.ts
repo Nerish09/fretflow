@@ -219,6 +219,29 @@ export type PracticeSessionInput = {
   started_at?: string;
 };
 
+export type CompletePracticeSessionInput = {
+  duration_minutes: number;
+  focus: string;
+  notes?: string | null;
+  started_at?: string;
+
+  entity_type:
+    | "song"
+    | "exercise"
+    | "custom";
+
+  entity_id?: number | null;
+  bpm?: number | null;
+  update_progress?: boolean;
+};
+
+export type CompletePracticeSessionResult = {
+  session: PracticeSession;
+  progress_updated: boolean;
+  previous_bpm: number | null;
+  current_bpm: number | null;
+};
+
 export async function getPracticeSessions(): Promise<
   PracticeSession[]
 > {
@@ -255,6 +278,31 @@ export async function createPracticeSession(
 
     throw new Error(
       error?.detail || "Failed to create practice session"
+    );
+  }
+
+  return response.json();
+}
+
+export async function completePracticeSession(
+  data: CompletePracticeSessionInput
+): Promise<CompletePracticeSessionResult> {
+  const response = await fetch(
+    `${API_URL}/practice-sessions/complete`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+
+    throw new Error(
+      error?.detail || "Failed to complete practice session"
     );
   }
 
